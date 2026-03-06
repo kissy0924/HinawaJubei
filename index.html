@@ -683,6 +683,10 @@ Presented by
                     ctx.restore();
                     return;
                 }
+                if (this.bulletImg && !this.bulletImg.complete) {
+                    ctx.restore();
+                    return;
+                }
                 ctx.fillStyle = this.color; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
                 if (this.isLaser) {
                     ctx.shadowBlur = 10; ctx.shadowColor = COLORS.CYAN;
@@ -746,9 +750,6 @@ Presented by
                         dh = nh * scale;
                     }
                     ctx.drawImage(this.image, this.x - dw / 2, this.y - dh / 2, dw, dh);
-                } else {
-                    ctx.fillStyle = COLORS.YELLOW;
-                    ctx.fillRect(this.x - 25, this.y - 25, 50, 50);
                 }
             }
         }
