@@ -521,6 +521,8 @@ Presented by
             CYAN: '#0ff', MAGENTA: '#f0f', YELLOW: '#ff0', WHITE: '#fff', RED: '#f00', GREEN: '#0f0', GOLD: '#ffd700'
         };
 
+        // 【封印】敵の描画サイズ（ENEMY_TYPES.maxWidth および Invader.width/height）は今後変更しない。
+        //         勝手に数値・係数・算出ロジックを変更/簡略化/統合することを禁止。
         const ENEMY_TYPES = {
             kapa: { image: 'kapa.png', maxWidth: 50, health: 1, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
             kapa02: { image: 'kapa02.png', maxWidth: 50, health: 1, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
@@ -922,6 +924,7 @@ Presented by
             constructor(x, y, typeName, game, isMidBoss = false) {
                 this.x = x; this.y = y; this.typeName = typeName; this.type = ENEMY_TYPES[typeName];
                 this.game = game;
+                // 【封印】敵サイズ決定の中枢。ここ（width/height）を勝手に変更しない。
                 this.isMidBoss = isMidBoss; this.width = isMidBoss ? this.type.maxWidth * 2 : this.type.maxWidth;
                 this.height = this.width; this.health = (isMidBoss && Number.isFinite(this.type.midBossHealth)) ? this.type.midBossHealth : (isMidBoss ? this.type.health * 4 : this.type.health);
                 this.maxHealth = this.health; this.markedForDeletion = false; this.hitFlash = 0;
@@ -953,6 +956,7 @@ Presented by
 
                 this.image = new Image();
                 this.image.src = this.type.image;
+                this.image.onload = () => { this.height = this.width * (this.image.naturalHeight / this.image.naturalWidth); };
                 this.color = this.type.color;
             }
 
@@ -1207,7 +1211,8 @@ Presented by
                         const isEnraged32 = (stageCfg && stageCfg.waveLabel === '3-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
                         const isEnraged51 = (stageCfg && stageCfg.waveLabel === '5-1' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
                         const isEnraged52 = (stageCfg && stageCfg.waveLabel === '5-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
-                        const showEnrageFx = ((isEnraged12 || isEnraged21 || isEnraged22Hyoutan02 || isEnraged31 || isEnraged32 || isEnraged51 || isEnraged52) && !this.type.isBoss && !this.isMidBoss);
+                        const isPowerUpFx = (stageCfg && (stageCfg.waveLabel === '4-1' || stageCfg.waveLabel === '4-2') && this.type && this.type.canHide && this.game && this.game.aliveInvaderCount > 0 && this.game.aliveInvaderCount <= 3);
+                        const showEnrageFx = (((isEnraged12 || isEnraged21 || isEnraged22Hyoutan02 || isEnraged31 || isEnraged32 || isEnraged51 || isEnraged52) && !this.type.isBoss && !this.isMidBoss) || isPowerUpFx);
                         if (boss7Enraged) {
                             ctx.save();
                             ctx.filter = 'brightness(1.1) saturate(2.0) hue-rotate(330deg)';
@@ -1294,7 +1299,8 @@ Presented by
 
                 // 新追加アイテム専用SE
                 this.kobanSound = s('tanepey.mp3'); // 小判取得音 (tanepayではなく指定通りのtanepey.mp3)
-                this.imoSound = s('imo.mp3');       // イモ取得音
+                this.imoSound = s('taberu.mp3');       // イモ取得音
+                this.chokamenSound = s('chokamen.mp3');
 
                 this.titleBgm = s('opning.mp3');
                 if (this.titleBgm) this.titleBgm.loop = true;
@@ -1781,7 +1787,7 @@ Presented by
                                 s.isVisible = true;
                                 appearCenter();
                                 this.midBossAttackStep = 100;
-                                this.midBossAttackTimer = 3000;
+                                this.midBossAttackTimer = 0;
                             } else if (step === 100) {
                                 s.isVisible = false;
                                 teleportRandom();
@@ -1809,7 +1815,7 @@ Presented by
                                 this.midBossAttackTimer = 0;
                             } else if (step === 5) {
                                 s.isVisible = true;
-                                spawnFan(4, 1.2, 3);
+                                spawnFan(3, 0.9, 3);
                                 this.midBossAttackStep = 6;
                                 this.midBossAttackTimer = 500;
                             } else if (step === 6) {
@@ -1819,23 +1825,9 @@ Presented by
                                 this.midBossAttackTimer = 0;
                             } else if (step === 7) {
                                 s.isVisible = true;
-                                this.midBossAttackStep = 8;
+                                appearCenter();
+                                this.midBossAttackStep = 100;
                                 this.midBossAttackTimer = 3000;
-                            } else if (step === 8) {
-                                spawnAimed(3);
-                                spawnAimed(3.6);
-                                this.midBossAttackStep = 9;
-                                this.midBossAttackTimer = 1000;
-                            } else if (step === 9) {
-                                spawnAimed(3);
-                                spawnAimed(3.6);
-                                this.midBossAttackStep = 101;
-                                this.midBossAttackTimer = 1000;
-                            } else if (step === 101) {
-                                s.isVisible = false;
-                                teleportRandom();
-                                this.midBossAttackStep = 1;
-                                this.midBossAttackTimer = 0;
                             } else {
                                 this.midBossAttackStep = 0;
                                 this.midBossAttackTimer = 0;
@@ -2164,13 +2156,15 @@ Presented by
                 if (this.ui.endingTapHint) this.ui.endingTapHint.classList.add('hidden');
                 const ec = document.getElementById('ending-credits');
                 if (ec) {
-                    ec.classList.remove('scroll');
-                    void ec.offsetWidth;
-                    ec.classList.add('scroll');
-                    ec.onanimationend = () => {
-                        this.endingTapEnabled = true;
-                        if (this.ui.endingTapHint) this.ui.endingTapHint.classList.remove('hidden');
-                    };
+                    requestAnimationFrame(() => {
+                        ec.classList.remove('scroll');
+                        void ec.offsetWidth;
+                        ec.classList.add('scroll');
+                        ec.onanimationend = () => {
+                            this.endingTapEnabled = true;
+                            if (this.ui.endingTapHint) this.ui.endingTapHint.classList.remove('hidden');
+                        };
+                    });
                 }
                 let hs = 0; try { hs = parseInt(localStorage.getItem('wazaika_high_score')) || 0; } catch (e) { }
                 if (this.score > hs) localStorage.setItem('wazaika_high_score', this.score);
@@ -2200,6 +2194,7 @@ Presented by
                     if (this.chyoka && !this.chyoka.markedForDeletion && this.rectHit(b, this.chyoka)) {
                         this.chyoka.markedForDeletion = true;
                         b.markedForDeletion = true;
+                        this.safePlay(this.chokamenSound);
                         this.score += 5000;
                         this.ui.score.innerText = this.score;
                         for (let i = 0; i < 60; i++) this.souls.push(new SoulParticle(this.chyoka.x + this.chyoka.width / 2, this.chyoka.y + this.chyoka.height / 2, 2));
@@ -2295,7 +2290,7 @@ Presented by
                             for (let i = 0; i < 30; i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
                         } else if (it.type === 'imo') {
                             // 回復アイテム
-                            this.safePlay(this.healSound);
+                            this.safePlay(this.imoSound);
                             if (this.lives < 3) {
                                 this.lives++;
                                 this.updateLivesUI();
@@ -2313,6 +2308,10 @@ Presented by
                                 const x = xs[Math.floor(Math.random() * xs.length)];
                                 const y = 170;
                                 this.chyoka = { x, y, width: w, height: h, timerSec: 3, markedForDeletion: false };
+                            }
+                            if (this.lives < this.maxVisibleHearts) {
+                                this.lives++;
+                                this.updateLivesUI();
                             }
                             switch (it.type) {
                                 case 'totu': this.player.setWeaponByIndex(4); break;
