@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>わざいか！種子島妖怪大決戦</title>
+    <style>
+        /**
+         * Wazaika! Tanegashima Youkai Daikessen - FULL SPEC RESTORED & ULTIMATE STABLE
+         */
+        :root {
+            --neon-cyan: #0ff;
+            --neon-magenta: #f0f;
+            --neon-yellow: #ff0;
+            --bg-dark: #0a0a0f;
+            --text-color: #fff;
+            --gold-glow: #ffd700;
+        }
+
+        @font-face {
+            font-family: 'DotGothic16';
+            src: url('DotGothic16-Regular.ttf') format('truetype');
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: 'DotGothic16', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: #111;
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 15px var(--neon-cyan);
+            overflow: hidden;
+        }
+
+        #tanepay-logo {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: auto;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #tanepay-logo.glow-active {
+            animation: logo-glow-anim 0.3s ease-out forwards;
+        }
+
+        @keyframes logo-glow-anim {
+            0% {
+                filter: drop-shadow(0 0 0px var(--gold-glow)) brightness(1);
+            }
+
+            50% {
+                filter: drop-shadow(0 0 15px var(--gold-glow)) brightness(1.5);
+            }
+
+            100% {
+                filter: drop-shadow(0 0 4px var(--gold-glow)) brightness(1.1);
+            }
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 400px;
+            height: 600px;
+            image-rendering: pixelated;
+        }
+
+        #ui-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #score-board {
+            position: absolute;
+            top: 10px;
+            left: 255px;
+            font-size: 30px;
+            color: var(--neon-yellow);
+            text-shadow: 2px 2px 4px #000, 0 0 10px var(--gold-glow);
+        }
+
+        #lives-display {
+            position: absolute;
+            top: 50px;
+            left: 255px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .heart-icon {
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+        }
+
+        #stage-display,
+        #time-display,
+        #weapon-display {
+            position: absolute;
+            font-size: 26px;
+            color: var(--text-color);
+            text-shadow: 2px 2px 4px #000, 0 0 5px var(--neon-cyan);
+        }
+
+        /* ステージとタイムを横一列に配置 */
+        #stage-display {
+            top: 10px;
+            left: 10px;
+        }
+
+        #time-display {
+            top: 10px;
+            left: 110px;
+        }
+
+        #weapon-display {
+            top: 45px;
+            left: 0px;
+            color: var(--neon-cyan);
+            pointer-events: auto;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #weapon-img {
+            height: 54px;
+            width: auto;
+            image-rendering: pixelated;
+        }
+
+        #high-score-board {
+            position: absolute;
+            top: 90px;
+            width: 100%;
+            text-align: center;
+            font-size: 32px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 15px var(--neon-yellow), 3px 3px 6px #000;
+            z-index: 45;
+            pointer-events: none;
+        }
+
+        #stage-clear {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow), 2px 2px #000;
+            z-index: 20;
+            text-align: center;
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
+
+        #stage-clear.stage-clear-tappable {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        #stage-clear img {
+            display: block;
+            max-width: 320px;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 40;
+            padding: 20px;
+        }
+
+        #start-screen {
+            background: #000;
+            background-image: url("tittle00.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+        }
+
+        #start-screen.title-visible {
+            background-image: url("tittle.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .title-btns {
+            margin-top: 286px;
+            position: relative;
+            top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            pointer-events: auto;
+        }
+
+        .title-btn {
+            padding: 10px 16px;
+            min-width: 140px;
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 26px;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+            background: rgba(0, 255, 255, 0.08);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 10px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        #secret-hint {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: var(--neon-cyan);
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #secret-mode-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .secret-col {
+            position: absolute;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            z-index: 3;
+        }
+
+        .secret-col.left {
+            left: 0;
+        }
+
+        .secret-col.right {
+            right: 0;
+        }
+
+        .secret-col img {
+            display: block;
+        }
+
+        .secret-col img[data-secret-id] {
+            visibility: hidden;
+        }
+
+        #game-over-screen {
+            background: rgba(10, 0, 0, 0.8);
+            cursor: pointer;
+        }
+
+        #game-over-screen h1 {
+            color: var(--neon-magenta);
+            text-shadow: 0 0 20px var(--neon-magenta), 3px 3px #000;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        #game-over-image {
+            width: 140px;
+            height: auto;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 15px var(--neon-magenta));
+        }
+
+        #ending-screen {
+            background: #000;
+            cursor: pointer;
+        }
+
+        #ending-image {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+
+        #ending-credits-wrap {
+            width: 100%;
+            max-width: 380px;
+            height: 220px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+            pointer-events: none;
+        }
+
+        #ending-credits {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            white-space: pre-line;
+            transform: translateY(100%);
+            font-size: 18px;
+            line-height: 1.5;
+            color: var(--text-color);
+        }
+
+        #ending-credits.scroll {
+            animation: endingCreditsScroll 35s linear forwards;
+        }
+
+        @keyframes endingCreditsScroll {
+            0% {
+                transform: translateY(100%);
+            }
+
+            100% {
+                transform: translateY(-120%);
+            }
+        }
+
+        #mobile-controls {
+            display: flex;
+            width: 400px;
+            height: 100px;
+            background: #111;
+            border: 2px solid var(--neon-cyan);
+            border-top: none;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .control-btn {
+            flex: 1;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 10px;
+            color: var(--neon-cyan);
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .blink {
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-wrapper">
+        <div id="game-container">
+            <img id="tanepay-logo" class="hidden" src="tanepay.png" alt="Tanepay">
+            <div id="high-score-board" class="hidden">最高記録: <span id="high-score">0</span></div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="ui-layer" class="hidden">
+                <div id="score-board"><span id="score">0</span></div>
+                <div id="lives-display">
+                    <img id="heart-0" class="heart-icon" src="herat_01.png">
+                    <img id="heart-1" class="heart-icon" src="herat_01.png">
+                    <img id="heart-2" class="heart-icon" src="herat_01.png">
+                    <img id="heart-3" class="heart-icon" src="heart_00.png" style="display:none">
+                    <img id="heart-4" class="heart-icon" src="heart_00.png" style="display:none">
+                </div>
+                <!-- ラベルテキスト削除済、横並び配置 -->
+                <div id="stage-display"><span id="stage">1-1</span></div>
+                <div id="time-display"><span id="time">100</span></div>
+                <div id="weapon-display">
+                    <img id="weapon-img" src="zyu_normal.png" alt="武器">
+                </div>
+            </div>
+            <div id="stage-clear" class="hidden"></div>
+            <div id="start-screen" class="overlay">
+                <div id="title-audio-msg"
+                    style="color:var(--neon-yellow);font-size:22px;line-height:1.4;text-align:center;">
+                    タップするとBGM<br>
+                    「火縄銃兵衛のテーマ」が<br>
+                    流れます。<br>
+                    音量にご注意ください。
+                </div>
+                <div class="title-btns hidden">
+                    <button id="btn-start" class="title-btn">スタート</button>
+                    <button id="btn-secret" class="title-btn">シークレット</button>
+                </div>
+            </div>
+            <div id="game-over-screen" class="overlay hidden">
+                <h1>ゲームオーバー</h1>
+                <img id="game-over-image" src="player_gameover.png" alt="敗北">
+                <p style="color:var(--neon-yellow);font-size:24px;">最終スコア: <span id="final-score">0</span></p>
+                <p class="blink" style="color:var(--neon-cyan);font-size:32px;margin-top:20px;">再挑戦する！</p>
+            </div>
+            <div id="ending-screen" class="overlay hidden">
+                <img id="ending-image" src="ending.png" alt="エンディング">
+                <p style="color:var(--neon-yellow);font-size:28px;margin-bottom:10px;">祝！種子島妖怪大決戦 制覇</p>
+                <p style="color:var(--text-color);font-size:24px;">最終スコア: <span id="end-final-score">0</span></p>
+                <div id="ending-credits-wrap">
+                    <div id="ending-credits">Game Design
+木下勝
+
+AI Assisted Development
+生成AI
+
+Sound & Music
+スズキサトシ
+ポケットサウンド
+(https://pocket-se.info/)
+seadenden
+(https://seadenden-8bit.com)
+
+Voice Cooperation
+TAC（種子島アクションクラブ）
+
+Special Thanks /
+Production Cooperation
+西之表市役所 経済観光課 商工政策係
+※火縄銃兵衛・わかさ姫は西之表市のマスコットキャラクターです
+
+Presented by
+種子島ゲームス</div>
+                </div>
+                <p id="ending-tap-hint" class="blink hidden" style="color:var(--neon-cyan);font-size:32px;margin-top:30px;">タップでタイトルへ</p>
+            </div>
+            <div id="secret-screen" class="overlay hidden">
+                <div id="secret-hint">画面タップでもどる</div>
+                <img id="secret-mode-bg" src="secret_mode.png" alt="secret_mode">
+                <div class="secret-col left">
+                    <img src="secret_left01.png" alt="secret_left01" data-secret-id="1">
+                    <img src="secret_left02.png" alt="secret_left02" data-secret-id="2">
+                    <img src="secret_left03.png" alt="secret_left03" data-secret-id="3">
+                    <img src="secret_left04.png" alt="secret_left04" data-secret-id="4">
+                </div>
+                <div class="secret-col right">
+                    <img src="secret_right00.png" alt="secret_right00">
+                    <img src="secret_right01.png" alt="secret_right01" data-secret-id="5">
+                    <img src="secret_right02.png" alt="secret_right02" data-secret-id="6">
+                    <img src="secret_right03.png" alt="secret_right03" data-secret-id="7">
+                    <img src="secret_right04.png" alt="secret_right04" data-secret-id="8">
+                </div>
+            </div>
+        </div>
+        <div id="mobile-controls">
+            <button id="btn-left" class="control-btn">←</button>
+            <button id="btn-right" class="control-btn">→</button>
+        </div>
+    </div>
+    <script>
+        const CANVAS_LOGICAL_WIDTH = 400;
+        const CANVAS_LOGICAL_HEIGHT = 600;
+        let DEBUG_INVINCIBLE = false; // 無敵モードを解除
+
+        const COLORS = {
+            CYAN: '#0ff', MAGENTA: '#f0f', YELLOW: '#ff0', WHITE: '#fff', RED: '#f00', GREEN: '#0f0', GOLD: '#ffd700'
+        };
+
+        const ENEMY_TYPES = {
+            kapa: { image: 'kapa.png', maxWidth: 50, health: 1, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
+            kapa02: { image: 'kapa02.png', maxWidth: 50, health: 1, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
+            kapa03: { image: 'kapa03.png', maxWidth: 50, health: 1, midBossHealth: 10, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
+            hyoutan: { image: 'hyoutan.png', maxWidth: 50, health: 1, color: COLORS.YELLOW, splitInto: 'miniHyoutan', bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
+            hyoutan_nosplit: { image: 'hyoutan.png', maxWidth: 50, health: 1, color: COLORS.YELLOW, bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
+            hyoutan02: { image: 'hyoutan02.png', maxWidth: 50, health: 1, color: COLORS.YELLOW, splitInto: 'miniHyoutan', bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
+            hyoutan03: { image: 'hyoutan03.png', maxWidth: 50, health: 1, midBossHealth: 8, color: COLORS.YELLOW, splitInto: 'miniHyoutan', bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
+            tinoishi: { image: 'tinoishi.png', maxWidth: 80, health: 10, color: COLORS.RED },
+            miniHyoutan: { image: 'hyoutan.png', maxWidth: 25, health: 1, color: COLORS.YELLOW, bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
+            hitotume: { image: 'hitotume.png', maxWidth: 50, health: 2, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
+            hitotume02: { image: 'hitotume02.png', maxWidth: 50, health: 3, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
+            hitotume03: { image: 'hitotume03.png', maxWidth: 50, health: 2, midBossHealth: 12, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
+            nuriyome: { image: 'nuriyome.png', maxWidth: 50, health: 1, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama.png' },
+            nuriyome02: { image: 'nuriyome02.png', maxWidth: 50, health: 1, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama.png' },
+            nuriyome03: { image: 'nuriyome03.png', maxWidth: 50, health: 1, midBossHealth: 8, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama02.png' },
+            oni: { image: 'oni.png', maxWidth: 80, health: 3, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
+            oni02: { image: 'oni02.png', maxWidth: 80, health: 3, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
+            oni03: { image: 'oni03.png', maxWidth: 80, health: 3, midBossHealth: 20, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
+            tengu: { image: 'tengu.png', maxWidth: 62, health: 4, midBossHealth: 4, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane.png' },
+            tengu02: { image: 'tengu02.png', maxWidth: 62, health: 5, midBossHealth: 5, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane02.png' },
+            tengu03: { image: 'tengu03.png', maxWidth: 62, health: 6, midBossHealth: 6, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane03.png' },
+            inugami01: { image: 'inugami01.png', maxWidth: 240, health: 40, color: COLORS.RED, isBoss: true, circleMove: true, bulletImage: 'inugami01_kaminari.png' },
+            inugami02: { image: 'inugami02.png', maxWidth: 90, health: 60, color: COLORS.MAGENTA, isBoss: true, randomMove: true, bulletImage: 'inugami02_tama.png' }
+        };
+
+        const STAGE_CONFIG = [
+            { enemy: 'kapa', rows: 3, cols: 5, speed: 0.5, enemyBulletVy: 1, bg: 'st_01.png', bgm: 'STAGE-01.mp3', opening: 'OP01.png', waveLabel: '1-1' },
+            { enemy: 'kapa02', rows: 3, cols: 5, speed: 0.75, enemyBulletVy: 1.5, bg: 'st_01.png', bgm: 'STAGE-01.mp3', waveLabel: '1-2' },
+            { enemy: 'kapa03', isMidBoss: true, speed: 1.0, enemyBulletVy: 1.5, bg: 'st_01.png', bgm: 'STAGE-01.mp3', waveLabel: '1-3' },
+            { enemy: 'hyoutan_nosplit', rows: 3, cols: 4, speed: 0.5, enemyBulletVy: 2, bg: 'st_02.png', bgm: 'STAGE-02.mp3', opening: 'OP02.png', waveLabel: '2-1' },
+            { enemy: 'hyoutan02', rows: 3, cols: 4, speed: 0.75, enemyBulletVy: 2, bg: 'st_02.png', bgm: 'STAGE-02.mp3', waveLabel: '2-2' },
+            { enemy: 'hyoutan03', isMidBoss: true, speed: 1.0, bg: 'st_02.png', bgm: 'STAGE-02.mp3', waveLabel: '2-3' },
+            { enemy: 'hitotume', rows: 4, cols: 4, speed: 0.75, bg: 'st_03.png', bgm: 'STAGE-03.mp3', opening: 'OP03.png', waveLabel: '3-1' },
+            { enemy: 'hitotume02', rows: 4, cols: 5, speed: 1.0, bg: 'st_03.png', bgm: 'STAGE-03.mp3', waveLabel: '3-2' },
+            { enemy: 'hitotume03', isMidBoss: true, speed: 1.5, bg: 'st_03.png', bgm: 'STAGE-03.mp3', waveLabel: '3-3' },
+            { enemy: 'nuriyome', rows: 5, cols: 3, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', opening: 'OP04.png', waveLabel: '4-1' },
+            { enemy: 'nuriyome02', rows: 5, cols: 3, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', waveLabel: '4-2' },
+            { enemy: 'nuriyome03', isMidBoss: true, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', waveLabel: '4-3' },
+            { enemy: 'oni', rows: 4, cols: 3, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', opening: 'OP05.png', waveLabel: '5-1' },
+            { enemy: 'oni02', rows: 5, cols: 3, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-2' },
+            { enemy: 'oni03', isMidBoss: true, speed: 1.8, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-3' },
+            { enemy: 'tengu', rows: 1, cols: 1, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', opening: 'OP06.png', waveLabel: '6-1', isMidBoss: true },
+            { enemy: 'tengu', rows: 1, cols: 2, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', waveLabel: '6-2', isMidBoss: true },
+            { enemy: 'tengu', rows: 1, cols: 3, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', waveLabel: '6-3', isMidBoss: true },
+            { enemy: 'inugami01', rows: 1, cols: 1, speed: 0.0, bg: 'st_07.png', bgm: 'STAGE-07.mp3', opening: 'OP07.png', waveLabel: '7' },
+            { enemy: 'inugami02', rows: 1, cols: 1, speed: 2.5, bg: 'st_08.png', bgm: 'STAGE-08.mp3', opening: 'OP08.png', waveLabel: '8' }
+        ];
+
+        // ウェーブ番号をメジャーステージ番号(1-8)に紐付け
+        const STAGE_MAP = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 8];
+
+        // ステージごとの隠しアイテム座標 (全8ステージ)
+        const HIDDEN_ITEM_POSITIONS = [
+            { x: 50, y: 150 },  // Stage 1
+            { x: 350, y: 200 }, // Stage 2
+            { x: 250, y: 400 }, // Stage 3
+            { x: 100, y: 350 }, // Stage 4
+            { x: 300, y: 300 }, // Stage 5
+            { x: 150, y: 500 }, // Stage 6
+            { x: 200, y: 250 }, // Stage 7
+            { x: 350, y: 450 }  // Stage 8
+        ];
+
+        class SoulParticle {
+            constructor(x, y, sizeMult = 1) {
+                this.x = x + (Math.random() - 0.5) * 40;
+                this.y = y + (Math.random() - 0.5) * 40;
+                this.targetX = 200; this.targetY = 25;
+                this.speed = 1.0 + Math.random() * 2; this.accel = 1.12;
+                this.markedForDeletion = false;
+                this.size = (0.8 + Math.random() * 1.2) * sizeMult;
+            }
+            update() {
+                const dx = this.targetX - this.x, dy = this.targetY - this.y, dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 10 || this.speed > dist) { this.markedForDeletion = true; return; }
+                this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed;
+                this.speed *= this.accel;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.fillStyle = COLORS.GOLD; ctx.globalAlpha = 0.3;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 3.5, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = COLORS.WHITE; ctx.globalAlpha = 1.0; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class BlastEffect {
+            constructor(x, y, radius) {
+                this.x = x; this.y = y; this.maxRadius = radius;
+                this.currentRadius = 0; this.alpha = 1;
+                this.markedForDeletion = false;
+            }
+            update() { this.currentRadius += 7; this.alpha -= 0.05; if (this.alpha <= 0) this.markedForDeletion = true; }
+            draw(ctx) { ctx.save(); ctx.globalAlpha = Math.max(0, this.alpha); ctx.fillStyle = COLORS.GOLD; ctx.beginPath(); ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        }
+
+        const BULLET_IMAGE_CACHE = {};
+
+        class Bullet {
+            constructor(x, y, vy, color, vx = 0, isEnemy = false, shape = 'circle', imgSource = null, radius = 5, isExplosive = false, isLaser = false, damage = 1, drawMaxWidth = null, splashDamage = null) {
+                this.x = x; this.y = y; this.vy = vy; this.vx = vx;
+                this.radius = radius; this.width = radius * 2; this.height = radius * 2;
+                this.centerBased = true;
+                this.color = color; this.markedForDeletion = false; this.isExplosive = isExplosive;
+                this.isEnemy = isEnemy; this.shape = shape; this.isLaser = isLaser; this.damage = damage;
+                this.drawMaxWidth = drawMaxWidth;
+                this.splashDamage = (Number.isFinite(splashDamage) ? splashDamage : damage);
+                this.bulletImg = null; if (imgSource) { if (!BULLET_IMAGE_CACHE[imgSource]) { const img = new Image(); img.src = imgSource; BULLET_IMAGE_CACHE[imgSource] = img; } this.bulletImg = BULLET_IMAGE_CACHE[imgSource]; }
+                this.oscillateX = false; this.oscPhase = 0; this.oscSpeed = 0; this.oscAmp = 0; this.baseVx = vx;
+                this.preDelayMs = 0;
+                this.preDelayBlinkPeriodMs = 200;
+                this.postDelayVy = null;
+                this.postDelayVx = null;
+                this.hitEnemies = new Set();
+            }
+            update() {
+                if (this.preDelayMs > 0) {
+                    const dtMs = (window.game && Number.isFinite(window.game.frameDeltaSec)) ? (window.game.frameDeltaSec * 1000) : 16;
+                    this.preDelayMs -= dtMs;
+                    if (this.preDelayMs <= 0) {
+                        if (Number.isFinite(this.postDelayVy)) this.vy = this.postDelayVy;
+                        if (Number.isFinite(this.postDelayVx)) this.vx = this.postDelayVx;
+                        this.preDelayMs = 0;
+                    }
+                    return;
+                }
+                this.y += this.vy;
+                if (this.oscillateX) {
+                    this.oscPhase += this.oscSpeed;
+                    this.x += this.baseVx + (Math.sin(this.oscPhase) * this.oscAmp);
+                } else {
+                    this.x += this.vx;
+                }
+                if ((!this.isEnemy && this.y < -20) || this.y > 750 || this.x < -150 || this.x > 550 || (this.isEnemy && this.y < -150)) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                ctx.save();
+                if (this.preDelayMs > 0) {
+                    const p = Math.max(60, this.preDelayBlinkPeriodMs);
+                    const phase = Math.floor(Date.now() / p) % 2;
+                    ctx.globalAlpha = phase ? 0.25 : 1.0;
+                }
+                if (this.bulletImg && this.bulletImg.complete) {
+                    const nw = this.bulletImg.naturalWidth || this.bulletImg.width;
+                    const nh = this.bulletImg.naturalHeight || this.bulletImg.height;
+                    const maxSize = (Number.isFinite(this.drawMaxWidth) ? this.drawMaxWidth : (this.radius * 2));
+                    let dw = maxSize, dh = maxSize;
+                    if (nw && nh) {
+                        const scale = maxSize / Math.max(nw, nh);
+                        dw = nw * scale;
+                        dh = nh * scale;
+                    }
+                    this.width = dw;
+                    this.height = dh;
+                    ctx.drawImage(this.bulletImg, this.x - dw / 2, this.y - dh / 2, dw, dh);
+                    ctx.restore();
+                    return;
+                }
+                ctx.fillStyle = this.color; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
+                if (this.isLaser) {
+                    ctx.shadowBlur = 10; ctx.shadowColor = COLORS.CYAN;
+                    ctx.fillRect(this.x - 2, this.y, 4, 30);
+                } else if (this.isExplosive) { ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI * 2); ctx.fill(); }
+                else if (this.shape === 'diamond') {
+                    ctx.beginPath(); ctx.moveTo(this.x, this.y - this.radius); ctx.lineTo(this.x + this.radius, this.y); ctx.lineTo(this.x, this.y + this.radius); ctx.lineTo(this.x - this.radius, this.y); ctx.closePath(); ctx.fill();
+                } else if (this.shape === 'star') {
+                    ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.lineTo(this.x + Math.cos((18 + i * 72) / 180 * Math.PI) * this.radius, this.y + Math.sin((18 + i * 72) / 180 * Math.PI) * this.radius); ctx.lineTo(this.x + Math.cos((54 + i * 72) / 180 * Math.PI) * (this.radius / 2), this.y + Math.sin((54 + i * 72) / 180 * Math.PI) * (this.radius / 2)); }
+                    ctx.closePath(); ctx.fill();
+                } else if (this.shape === 'wave') {
+                    ctx.beginPath(); ctx.moveTo(this.x, this.y - this.radius);
+                    ctx.bezierCurveTo(this.x + this.radius * 2, this.y, this.x - this.radius * 2, this.y, this.x, this.y + this.radius); ctx.stroke();
+                } else if (this.shape === 'magatama') {
+                    ctx.beginPath(); ctx.arc(this.x, this.y - 2, this.radius - 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, -Math.PI / 2, Math.PI / 2);
+                    ctx.quadraticCurveTo(this.x - this.radius, this.y + this.radius, this.x - this.radius, this.y); ctx.fill();
+                } else { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); }
+                ctx.restore();
+            }
+        }
+
+        class Item {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type; // totu, baku, ren, san, koban, imo
+                this.width = 50;
+                this.height = 50;
+                this.centerBased = true;
+                this.speed = 2.5;
+                this.markedForDeletion = false;
+                this.image = new Image();
+
+                // 武器アイテムは item_〜.png だが、小判とイモは単体の名前
+                if (type === 'koban') {
+                    this.image.src = 'koban.png';
+                } else if (type === 'imo') {
+                    this.image.src = 'imo.png';
+                } else if (type === 'mbrem') {
+                    this.image.src = 'mbrem.png';
+                } else if (type === 'wakasa') {
+                    this.image.src = 'wakasa.png';
+                    this.speed = 0;
+                } else {
+                    this.image.src = `item_${type}.png`;
+                }
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > CANVAS_LOGICAL_HEIGHT) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                if (this.image.complete) {
+                    const nw = this.image.naturalWidth || this.image.width;
+                    const nh = this.image.naturalHeight || this.image.height;
+                    let dw = 50, dh = 50;
+                    if (nw && nh) {
+                        const scale = 50 / Math.max(nw, nh);
+                        dw = nw * scale;
+                        dh = nh * scale;
+                    }
+                    ctx.drawImage(this.image, this.x - dw / 2, this.y - dh / 2, dw, dh);
+                } else {
+                    ctx.fillStyle = COLORS.YELLOW;
+                    ctx.fillRect(this.x - 25, this.y - 25, 50, 50);
+                }
+            }
+        }
+
+        class Player {
+            constructor(game) {
+                this.game = game; this.width = 50; this.height = 77;
+                this.x = CANVAS_LOGICAL_WIDTH / 2 - this.width / 2; this.y = CANVAS_LOGICAL_HEIGHT - this.height - 20;
+                this.speed = 5; this.bullets = []; this.isReloading = false;
+                this.imageNormal = new Image(); this.imageNormal.src = 'player.png';
+                this.imageWin = new Image(); this.imageWin.src = 'player_02.png';
+                this.image = this.imageNormal;
+                this.isInvincible = false; this.invincibleTimer = 0;
+                this.wakasaOptionActive = false;
+                this.wakasaOptionImage = new Image(); this.wakasaOptionImage.src = '01_WAKASA.png';
+                this.weapons = [
+                    { name: '伝来銃・故郷', type: 'normal', img: 'zyu_normal.png' },
+                    { name: '国産銃一号', type: 'ren', img: 'zyu_ren.png' },
+                    { name: '種子島', type: 'san', img: 'zyu_san.png' },
+                    { name: '種子島・改', type: 'baku', img: 'zyu_baku.png' },
+                    { name: '新・種子島', type: 'totu', img: 'zyu_totu.png' }
+                ];
+                this.weaponIdx = 0;
+            }
+            setWeaponByIndex(idx) {
+                this.weaponIdx = idx;
+                const w = this.weapons[this.weaponIdx];
+                if (this.game.ui.weaponImg) {
+                    this.game.ui.weaponImg.src = w.img;
+                }
+            }
+            switchWeapon() {
+                const nextIdx = (this.weaponIdx + 1) % this.weapons.length;
+                this.setWeaponByIndex(nextIdx);
+            }
+            setWinPose(isWin) {
+                if (isWin) { this.image = this.imageWin; this.width = 77; this.height = 77; }
+                else { this.image = this.imageNormal; this.width = 50; this.height = 77; }
+                this.y = CANVAS_LOGICAL_HEIGHT - this.height - 20;
+            }
+            shoot() {
+                if (this.isReloading) return;
+                if (this.wakasaOptionActive) {
+                    this.isReloading = true;
+                    const cx = this.x + this.width / 2;
+                    const cy = this.y;
+                    const offset = 10;
+                    const b1 = new Bullet(cx - offset, cy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1);
+                    const b2 = new Bullet(cx + offset, cy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1);
+                    b1.sourceWeaponType = 'totu';
+                    b2.sourceWeaponType = 'totu';
+                    this.bullets.push(b1);
+                    this.bullets.push(b2);
+                    this.game.safePlay(this.game.shotSound);
+                    setTimeout(() => { this.isReloading = false; }, 1200);
+                    return;
+                }
+                const w = this.weapons[this.weaponIdx];
+                const cx = this.x + this.width / 2;
+                const cy = this.y;
+
+                switch (w.type) {
+                    case 'normal':
+                        if (this.bullets.length === 0) {
+                            const b = new Bullet(cx, cy, -4.5, COLORS.GOLD, 0, false, 'circle', 'tama_ren.png', 8, false, false, 1);
+                            b.sourceWeaponType = 'normal';
+                            this.bullets.push(b);
+                            this.game.safePlay(this.game.shotSound);
+                        }
+                        break;
+                    case 'ren':
+                        // 指示：1発目発射 → 0.5秒後(500ms)に2発目 → さらに1秒後(1000ms)にリロード完了
+                        this.isReloading = true;
+                        this.bullets.push(new Bullet(cx, cy, -5, COLORS.WHITE, 0, false, 'circle', 'tama_ren.png', 8, false, false, 1));
+                        this.game.safePlay(this.game.shotSound);
+                        setTimeout(() => {
+                            const currentCx = this.x + this.width / 2;
+                            this.bullets.push(new Bullet(currentCx, cy, -5, COLORS.WHITE, 0, false, 'circle', 'tama_ren.png', 8, false, false, 1));
+                            this.game.safePlay(this.game.shotSound);
+                            setTimeout(() => { this.isReloading = false; }, 1500); // さらに1.5秒ウェイト
+                        }, 500); // 0.5秒後に2発目
+                        break;
+                    case 'san':
+                        this.isReloading = true;
+                        this.bullets.push(new Bullet(cx, cy, -5, COLORS.YELLOW, -1.5, false, 'circle', 'tama_ren.png', 8, false, false, 1));
+                        this.bullets.push(new Bullet(cx, cy, -5, COLORS.YELLOW, 0, false, 'circle', 'tama_ren.png', 8, false, false, 1));
+                        this.bullets.push(new Bullet(cx, cy, -5, COLORS.YELLOW, 1.5, false, 'circle', 'tama_ren.png', 8, false, false, 1));
+                        this.game.safePlay(this.game.shotSound);
+                        setTimeout(() => { this.isReloading = false; }, 1500);
+                        break;
+                    case 'baku':
+                        this.isReloading = true;
+                        this.bullets.push(new Bullet(cx, cy, -2.5, COLORS.YELLOW, 0, false, 'circle', 'tama_baku.png', 15, true, false, 2, null, 1));
+                        this.game.safePlay(this.game.shotSound);
+                        setTimeout(() => { this.isReloading = false; }, 1800);
+                        break;
+                    case 'totu':
+                        this.isReloading = true;
+                        this.bullets.push(new Bullet(cx, cy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1));
+                        this.game.safePlay(this.game.shotSound);
+                        setTimeout(() => { this.isReloading = false; }, 1200);
+                        break;
+                }
+            }
+            update(input) {
+                if (this.isInvincible) {
+                    const decMs = (this.game && Number.isFinite(this.game.frameDeltaSec)) ? (this.game.frameDeltaSec * 1000) : 16;
+                    this.invincibleTimer -= decMs;
+                    if (this.invincibleTimer <= 0) this.isInvincible = false;
+                }
+                if (input.includes('ArrowLeft')) this.x -= this.speed;
+                if (input.includes('ArrowRight')) this.x += this.speed;
+                this.x = Math.max(0, Math.min(CANVAS_LOGICAL_WIDTH - this.width, this.x));
+                if (this.game.invaders.length > 0 && !this.game.gameOver && !this.game.showingOpening) {
+                    this.shoot();
+                }
+                this.bullets.forEach(b => b.update()); this.bullets = this.bullets.filter(b => !b.markedForDeletion);
+            }
+            draw(ctx) {
+                this.bullets.forEach(b => b.draw(ctx));
+
+                if (this.isInvincible) {
+                    const t = Date.now();
+                    const cx = this.x + this.width / 2;
+                    const cy = this.y + this.height / 2;
+                    const r = 34 + 6 * Math.sin(t / 90);
+                    ctx.save();
+                    ctx.globalAlpha = 0.35;
+                    ctx.fillStyle = COLORS.CYAN;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 0.25;
+                    ctx.strokeStyle = COLORS.WHITE;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r + 6, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                if (this.image && this.image.complete) {
+                    if (this.isInvincible) {
+                        const phase = Math.floor(Date.now() / 120) % 2;
+                        ctx.save();
+                        ctx.globalAlpha = phase ? 0.35 : 1.0;
+                        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                        ctx.restore();
+                    } else {
+                        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                    }
+                }
+                if (this.wakasaOptionActive && this.wakasaOptionImage && this.wakasaOptionImage.complete) {
+                    const ow = 50, oh = 50;
+                    const oxRaw = this.x - ow + 10;
+                    const oyRaw = this.y + (this.height / 2) - (oh / 2);
+                    const ox = Math.max(0, Math.min(CANVAS_LOGICAL_WIDTH - ow, oxRaw));
+                    const oy = Math.max(0, Math.min(CANVAS_LOGICAL_HEIGHT - oh, oyRaw));
+                    const nw = this.wakasaOptionImage.naturalWidth || this.wakasaOptionImage.width;
+                    const nh = this.wakasaOptionImage.naturalHeight || this.wakasaOptionImage.height;
+                    let dw = ow, dh = oh;
+                    if (nw && nh) {
+                        const scale = Math.min(ow / nw, oh / nh);
+                        dw = nw * scale;
+                        dh = nh * scale;
+                    }
+                    ctx.drawImage(this.wakasaOptionImage, ox + (ow - dw) / 2, oy + (oh - dh) / 2, dw, dh);
+                }
+            }
+        }
+
+        class Invader {
+            constructor(x, y, typeName, game, isMidBoss = false) {
+                this.x = x; this.y = y; this.typeName = typeName; this.type = ENEMY_TYPES[typeName];
+                this.game = game;
+                this.isMidBoss = isMidBoss; this.width = isMidBoss ? this.type.maxWidth * 2 : this.type.maxWidth;
+                this.height = this.width; this.health = (isMidBoss && Number.isFinite(this.type.midBossHealth)) ? this.type.midBossHealth : (isMidBoss ? this.type.health * 4 : this.type.health);
+                this.maxHealth = this.health; this.markedForDeletion = false; this.hitFlash = 0;
+                this.vDir = 1; this.randomMoveTimer = 0; this.randomVX = 0; this.randomVY = 0;
+                this.angle = 0; this.isVisible = true; this.stateTimer = 0; this.nextInvisibleTime = 1000 + Math.random() * 1000;
+                this.feintPhase = 0; this.feintTimer = 0; this.nextFeintIn = 2500 + Math.random() * 2500;
+                this.dodgeCooldown = 0;
+
+                this.preHideAttackDone = false;
+                this.powerUpFirstShotDone = false;
+                this.powerUpSecondShotDone = false;
+                this.spawnAttackResolved = false;
+
+                this.tenguVX = (Math.random() < 0.5 ? -1 : 1) * (3.8 + Math.random() * 1.0);
+                this.tenguVY = (Math.random() < 0.5 ? -1 : 1) * (2.8 + Math.random() * 0.8);
+                this.tenguTurnIn = 900 + Math.random() * 900;
+                this.tenguMovePhase = 0;
+                this.tenguPhaseTimer = 0;
+                this.tenguNextSlowIn = 1200 + Math.random() * 1800;
+
+                this.laneBaseY = y;
+                this.laneTargetY = y;
+                this.laneNextIn = 900 + Math.random() * 1100;
+
+                this.oni03MovePhase = 0;
+                this.oni03BaseY = null;
+                this.oni03Dir = 1;
+                this.oni03NextDashIn = 2200 + Math.random() * 1800;
+
+                this.image = new Image();
+                this.image.src = this.type.image;
+                this.color = this.type.color;
+            }
+
+            update(velocity, deltaTime, stageSpeed) {
+                if (this.type.canHide) {
+                    const isPowerUp = (this.game && this.game.player && this.game.player.weaponIdx === 4);
+                    const isPowerUp41 = (this.game && Number.isFinite(this.game.currentStage) && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-1');
+
+                    this.stateTimer += deltaTime;
+                    if (this.isVisible) {
+                        if (isPowerUp) {
+                            if (!this.powerUpFirstShotDone) {
+                                this.powerUpFirstShotDone = true;
+                                const cfg = this.type;
+                                const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                                const r = baseR;
+
+                                if (isPowerUp41) {
+                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 4, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                } else {
+                                    const dx = (this.game.player.x + this.game.player.width / 2) - (this.x + this.width / 2);
+                                    const dy = (this.game.player.y + this.game.player.height / 2) - (this.y + this.height);
+                                    const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                    const spd = 3;
+                                    const avx = (dx / dist) * spd;
+                                    const avy = (dy / dist) * spd;
+                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            }
+                            if (this.stateTimer > 2000 && !this.powerUpSecondShotDone) {
+                                this.powerUpSecondShotDone = true;
+                                const cfg = this.type;
+                                const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                                const r = baseR;
+                                const dx = (this.game.player.x + this.game.player.width / 2) - (this.x + this.width / 2);
+                                const dy = (this.game.player.y + this.game.player.height / 2) - (this.y + this.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                const avx = (dx / dist) * spd;
+                                const avy = (dy / dist) * spd;
+                                this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            }
+
+                            if (this.stateTimer > 4000) {
+                                this.isVisible = false;
+                                this.stateTimer = 0;
+                                this.nextInvisibleTime = 1000;
+                            }
+                            return;
+                        }
+
+                        if (this.game && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-2' && this.typeName === 'nuriyome02') {
+                            if (this.stateTimer > 1500 && !this.preHideAttackDone) {
+                                this.preHideAttackDone = true;
+                                if (Math.random() >= 0.50) {
+                                    const cfg = this.type;
+                                    const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                                    const r = baseR;
+                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 4, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            }
+                        }
+                        if (this.stateTimer > 1500) { this.isVisible = false; this.stateTimer = 0; this.nextInvisibleTime = 1000 + Math.random() * 1000; }
+                    }
+                    else {
+                        if (this.stateTimer > this.nextInvisibleTime) {
+                            this.isVisible = true;
+                            this.stateTimer = 0;
+                            this.x = Math.random() * (CANVAS_LOGICAL_WIDTH - this.width);
+                            this.y = Math.random() * 200 + 50;
+                            this.preHideAttackDone = false;
+                            if (this.game && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-1' && this.typeName === 'nuriyome') this.spawnAttackResolved = false;
+
+                            if (isPowerUp) {
+                                this.powerUpFirstShotDone = false;
+                                this.powerUpSecondShotDone = false;
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
+                const wl = stageCfg ? stageCfg.waveLabel : null;
+                if (wl === '5-3' && this.isMidBoss && this.typeName === 'oni03') {
+                    if (!Number.isFinite(this.oni03BaseY)) this.oni03BaseY = this.y;
+
+                    const xSpeed = stageSpeed * 1.15;
+                    this.x += this.oni03Dir * xSpeed;
+                    if (this.x < 10) { this.x = 10; this.oni03Dir = 1; }
+                    if (this.x + this.width > (CANVAS_LOGICAL_WIDTH - 10)) { this.x = (CANVAS_LOGICAL_WIDTH - 10) - this.width; this.oni03Dir = -1; }
+
+                    const dashDepth = 170;
+                    const dashTargetY = Math.min(320, this.oni03BaseY + dashDepth);
+                    const dashSpeed = 8.0;
+                    const returnSpeed = 6.5;
+
+                    if (this.oni03MovePhase === 0) {
+                        this.oni03NextDashIn -= deltaTime;
+                        if (this.oni03NextDashIn <= 0) this.oni03MovePhase = 1;
+                    } else if (this.oni03MovePhase === 1) {
+                        this.y += dashSpeed;
+                        if (this.y >= dashTargetY) { this.y = dashTargetY; this.oni03MovePhase = 2; }
+                    } else {
+                        this.y -= returnSpeed;
+                        if (this.y <= this.oni03BaseY) {
+                            this.y = this.oni03BaseY;
+                            this.oni03MovePhase = 0;
+                            this.oni03NextDashIn = 2200 + Math.random() * 1800;
+                        }
+                    }
+                    return;
+                }
+
+                if (this.type.circleMove) {
+                    const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
+                    const wl = stageCfg ? stageCfg.waveLabel : null;
+                    const isBoss7Enraged = (wl === '7' && this.typeName === 'inugami01' && this.maxHealth > 0 && (this.health / this.maxHealth) <= 0.30);
+                    const mul = isBoss7Enraged ? 2 : 1;
+                    this.angle += 0.02 * mul;
+                    this.x = (CANVAS_LOGICAL_WIDTH / 2 - this.width / 2) + Math.cos(this.angle) * 80;
+                    this.y = 120 + Math.sin(this.angle) * 40;
+                    return;
+                }
+                if (this.type.verticalMove) { this.y += (stageSpeed * 1.5) * this.vDir; if (this.y > 450) this.vDir = -1; else if (this.y < 50) this.vDir = 1; }
+                else if (this.type.randomMove) {
+                    if (this.typeName === 'tengu') {
+                        const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
+                        const wl = stageCfg ? stageCfg.waveLabel : null;
+                        let moveMult = 1.0;
+                        if (wl === '6-1') moveMult = 0.90;
+                        else if (wl === '6-2') moveMult = 1.00;
+                        else if (wl === '6-3') moveMult = 1.10;
+
+                        if (this.dodgeCooldown > 0) this.dodgeCooldown -= deltaTime;
+                        if (this.dodgeCooldown <= 0 && this.game && this.game.player && this.game.player.bullets && this.game.player.bullets.length > 0) {
+                            for (let b of this.game.player.bullets) {
+                                if (b.markedForDeletion) continue;
+                                if (b.vy >= 0) continue;
+                                const dx = b.x - (this.x + this.width / 2);
+                                const dy = b.y - (this.y + this.height / 2);
+                                if (Math.sqrt(dx * dx + dy * dy) < 70) {
+                                    if (Math.random() < 0.12) {
+                                        const dir = dx < 0 ? 1 : -1;
+                                        this.x += dir * 25;
+                                        this.dodgeCooldown = 800;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (this.tenguMovePhase === 0) {
+                            this.tenguNextSlowIn -= deltaTime;
+                            if (this.tenguNextSlowIn <= 0) { this.tenguMovePhase = 1; this.tenguPhaseTimer = 300 + Math.random() * 300; }
+                        } else if (this.tenguMovePhase === 1) {
+                            this.tenguPhaseTimer -= deltaTime;
+                            if (this.tenguPhaseTimer <= 0) { this.tenguMovePhase = 2; this.tenguPhaseTimer = 1000; }
+                        } else if (this.tenguMovePhase === 2) {
+                            this.tenguPhaseTimer -= deltaTime;
+                            if (this.tenguPhaseTimer <= 0) { this.tenguMovePhase = 0; this.tenguNextSlowIn = 1200 + Math.random() * 1800; }
+                        }
+
+                        let vx = this.tenguVX;
+                        let vy = this.tenguVY;
+                        if (this.tenguMovePhase === 1) { vx *= 0.35; vy *= 0.35; }
+                        else if (this.tenguMovePhase === 2) { vx *= 1.4; vy *= 1.4; }
+
+                        vx *= moveMult;
+                        vy *= moveMult;
+
+                        this.tenguTurnIn -= deltaTime;
+                        if (this.tenguTurnIn <= 0) {
+                            this.tenguVX = (Math.random() < 0.5 ? -1 : 1) * (3.8 + Math.random() * 1.0);
+                            this.tenguVY = (Math.random() < 0.5 ? -1 : 1) * (2.8 + Math.random() * 0.8);
+                            this.tenguTurnIn = 900 + Math.random() * 900;
+                        }
+
+                        this.x += vx;
+                        this.y += vy;
+
+                        if (this.x < 10) { this.x = 10; this.tenguVX = Math.abs(this.tenguVX); }
+                        if (this.x + this.width > 390) { this.x = 390 - this.width; this.tenguVX = -Math.abs(this.tenguVX); }
+                        if (this.y < 50) { this.y = 50; this.tenguVY = Math.abs(this.tenguVY); }
+                        if (this.y + this.height > 300) { this.y = 300 - this.height; this.tenguVY = -Math.abs(this.tenguVY); }
+                        return;
+                    }
+                    this.randomMoveTimer += deltaTime;
+                    if (this.randomMoveTimer >= 800) {
+                        const r = Math.random();
+                        if (r < 0.2) { this.randomVX = 0; this.randomVY = 0; } else if (r < 0.6) { this.randomVX = (Math.random() - 0.5) * 3; this.randomVY = (Math.random() - 0.5) * 2; }
+                        else { this.randomVX = (Math.random() - 0.5) * 30; this.randomVY = (Math.random() - 0.5) * 10; }
+                        this.randomMoveTimer = 0;
+                    }
+                    this.x += this.randomVX; this.y += this.randomVY;
+                    this.x = Math.max(10, Math.min(CANVAS_LOGICAL_WIDTH - this.width - 10, this.x)); this.y = Math.max(50, Math.min(300, this.y));
+                } else {
+                    if (!this.type.isBoss && !this.isMidBoss && this.game && this.game.currentStage !== 0 && this.game.currentStage !== 4 && this.game.currentStage !== 6) {
+                        if (this.feintPhase === 0) {
+                            this.nextFeintIn -= deltaTime;
+                            if (this.nextFeintIn <= 0) { this.feintPhase = 1; this.feintTimer = 300 + Math.random() * 300; }
+                        } else if (this.feintPhase === 1) {
+                            this.feintTimer -= deltaTime;
+                            if (this.feintTimer <= 0) { this.feintPhase = 2; this.feintTimer = 1000; }
+                            velocity = 0;
+                        } else if (this.feintPhase === 2) {
+                            this.feintTimer -= deltaTime;
+                            if (this.feintTimer <= 0) { this.feintPhase = 0; this.nextFeintIn = 2500 + Math.random() * 2500; }
+                            velocity *= 1.3;
+                        }
+                    }
+
+                    const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
+                    const wl = stageCfg ? stageCfg.waveLabel : null;
+                    if (!this.type.isBoss && !this.isMidBoss && this.game && ((wl === '3-1' && this.typeName === 'hitotume') || (wl === '3-2' && this.typeName === 'hitotume02'))) {
+                        this.laneNextIn -= deltaTime;
+                        if (this.laneNextIn <= 0) {
+                            const offset = (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 30);
+                            this.laneTargetY = this.laneBaseY + offset;
+                            this.laneTargetY = Math.max(this.laneBaseY - 50, Math.min(this.laneBaseY + 50, this.laneTargetY));
+                            this.laneNextIn = 900 + Math.random() * 1100;
+                        }
+                        const dy = this.laneTargetY - this.y;
+                        if (Math.abs(dy) > 0.5) this.y += Math.sign(dy) * 0.6;
+                    }
+                    this.x += velocity;
+                }
+            }
+            draw(ctx) {
+                if (!this.isVisible) return;
+                if (this.image.complete) {
+                    const nw = this.image.naturalWidth || this.image.width;
+                    const nh = this.image.naturalHeight || this.image.height;
+                    let dw = this.width, dh = this.height;
+                    let dx = this.x, dy = this.y;
+                    if (nw && nh) {
+                        const scale = Math.min(this.width / nw, this.height / nh);
+                        dw = nw * scale;
+                        dh = nh * scale;
+                        dx = this.x + (this.width - dw) / 2;
+                        dy = this.y + (this.height - dh) / 2;
+                    }
+
+                    if (this.hitFlash > 0) { ctx.save(); ctx.filter = 'brightness(3)'; ctx.drawImage(this.image, dx, dy, dw, dh); ctx.restore(); this.hitFlash--; }
+                    else {
+                        const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
+                        const boss7Enraged = (stageCfg && stageCfg.waveLabel === '7' && this.typeName === 'inugami01' && this.maxHealth > 0 && (this.health / this.maxHealth) <= 0.30);
+                        const isEnraged12 = (stageCfg && stageCfg.waveLabel === '1-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
+                        const isEnraged21 = (stageCfg && stageCfg.waveLabel === '2-1' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
+                        const isEnraged22Hyoutan02 = (stageCfg && stageCfg.waveLabel === '2-2' && this.game && this.game.visibleHyoutan02Count > 0 && this.game.visibleHyoutan02Count <= 3 && this.typeName === 'hyoutan02');
+                        const isEnraged31 = (stageCfg && stageCfg.waveLabel === '3-1' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
+                        const isEnraged32 = (stageCfg && stageCfg.waveLabel === '3-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
+                        const isEnraged51 = (stageCfg && stageCfg.waveLabel === '5-1' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
+                        const isEnraged52 = (stageCfg && stageCfg.waveLabel === '5-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
+                        const showEnrageFx = ((isEnraged12 || isEnraged21 || isEnraged22Hyoutan02 || isEnraged31 || isEnraged32 || isEnraged51 || isEnraged52) && !this.type.isBoss && !this.isMidBoss);
+                        if (boss7Enraged) {
+                            ctx.save();
+                            ctx.filter = 'brightness(1.1) saturate(2.0) hue-rotate(330deg)';
+                            ctx.shadowBlur = 18;
+                            ctx.shadowColor = COLORS.RED;
+                            ctx.drawImage(this.image, dx, dy, dw, dh);
+                            ctx.restore();
+                        } else if (showEnrageFx) {
+                            const t = Date.now();
+                            const s = 1.0 + 0.06 * Math.sin(t / 90);
+                            ctx.save();
+                            ctx.filter = 'brightness(1.8)';
+                            ctx.shadowBlur = 14;
+                            ctx.shadowColor = COLORS.GOLD;
+                            const cx = this.x + this.width / 2;
+                            const cy = this.y + this.height / 2;
+                            ctx.translate(cx, cy);
+                            ctx.scale(s, s);
+                            ctx.translate(-cx, -cy);
+                            ctx.drawImage(this.image, dx, dy, dw, dh);
+                            ctx.restore();
+                        } else {
+                            ctx.drawImage(this.image, dx, dy, dw, dh);
+                        }
+                    }
+                }
+                if (this.type.isBoss || this.isMidBoss) {
+                    const barW = 300, startX = (CANVAS_LOGICAL_WIDTH - barW) / 2;
+                    ctx.fillStyle = '#333'; ctx.fillRect(startX, 115, barW, 10);
+                    const hpRate = (this.maxHealth > 0) ? (this.health / this.maxHealth) : 0;
+                    let hpColor = COLORS.CYAN;
+                    if (hpRate <= 0.30) hpColor = COLORS.RED;
+                    else if (hpRate <= 0.70) hpColor = COLORS.YELLOW;
+                    ctx.fillStyle = hpColor; ctx.fillRect(startX, 115, barW * hpRate, 10);
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 3 + 1;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.alpha = 1; this.decay = Math.random() * 0.03 + 0.01; this.size = Math.random() * 3 + 1;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; this.size *= 0.95; }
+            draw(ctx) { ctx.save(); ctx.globalAlpha = Math.max(0, this.alpha); ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        }
+
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas'); this.ctx = this.canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                this.canvas.width = CANVAS_LOGICAL_WIDTH * dpr; this.canvas.height = CANVAS_LOGICAL_HEIGHT * dpr;
+                this.ctx.scale(dpr, dpr);
+
+                this.ui = {
+                    score: document.getElementById('score'), stage: document.getElementById('stage'),
+                    time: document.getElementById('time'), highScore: document.getElementById('high-score'),
+                    highScoreBoard: document.getElementById('high-score-board'), startScreen: document.getElementById('start-screen'),
+                    gameOverScreen: document.getElementById('game-over-screen'), uiLayer: document.getElementById('ui-layer'),
+                    logo: document.getElementById('tanepay-logo'), weaponImg: document.getElementById('weapon-img'),
+                    stageClear: document.getElementById('stage-clear'), weaponDisplay: document.getElementById('weapon-display'),
+                    endingScreen: document.getElementById('ending-screen'), endFinalScore: document.getElementById('end-final-score'),
+                    endingTapHint: document.getElementById('ending-tap-hint'),
+                    finalScore: document.getElementById('final-score')
+                };
+                this.secretUnlocks = null;
+                this.lastFrameTs = null;
+                this.frameDeltaSec = 0;
+                this.setupAudio(); this.score = 0; this.init(); this.bindEvents();
+                requestAnimationFrame(this.loop.bind(this));
+            }
+            setupAudio() {
+                const s = (f) => { try { let a = new Audio(f); a.volume = 0.4; return a; } catch (e) { return null; } };
+                this.shotSound = s('player_shot.mp3'); this.damageSound = s('enemy_damage.mp3');
+                this.playerDamageSound = s('player_damage.mp3'); this.gameOverSound = s('wafu-gameover.mp3');
+                this.startSound = s('Mekkarimosan.mp3'); this.clearSound = s('clear.mp3');
+                this.katanaSound = s('katana1.ogg'); // 隠しアイテムヒット音
+                this.successSound = s('sb-success1.ogg'); // 隠しアイテム出現音
+                this.recoverySound = s('recovery3.ogg'); // ステージクリア後の回復音
+                this.pupSound = s('pup1.ogg'); // パワーアップ取得音
+                this.bonusSound = s('wafu-bonus.mp3');
+
+                // 新追加アイテム専用SE
+                this.kobanSound = s('tanepey.mp3'); // 小判取得音 (tanepayではなく指定通りのtanepey.mp3)
+                this.imoSound = s('imo.mp3');       // イモ取得音
+
+                this.titleBgm = s('opning.mp3');
+                if (this.titleBgm) this.titleBgm.loop = true;
+            }
+            init() {
+                this.player = new Player(this); this.invaders = []; this.souls = []; this.blasts = []; this.particles = [];
+                this.invaderBullets = []; this.pendingInvaders = []; this.items = []; this.input = [];
+                this.lives = 3; this.maxVisibleHearts = 3; this.gameOver = true; this.showingOpening = false; this.currentStage = 0; this.stageTime = 100;
+                this.killedCountInWave = 0;
+                this.mbremDropped = false;
+                this.waveTransitioning = false; this.invaderDirection = 1; this.bgImage = new Image(); this.gameStartedInitiated = false;
+                this.endingTapEnabled = false;
+
+                this.bonusLife1Granted = false;
+                this.bonusLife2Granted = false;
+
+                this.powerUpItemCount = 0;
+                this.chyoka = null;
+                this.chyokaImage = new Image(); this.chyokaImage.src = 'chyoka.png';
+
+                // 隠しアイテム管理用
+                this.currentMajorStage = 0;
+                this.hiddenItemHits = 0;
+                this.hiddenItemFound = false;
+                this.hiddenItemFlash = 0;
+                this.hiddenItemImage = new Image();
+
+                this.updateLivesUI();
+                if (this.ui.weaponImg) {
+                    this.ui.weaponImg.src = this.player.weapons[0].img;
+                }
+                let hs = 0; try { hs = parseInt(localStorage.getItem('wazaika_high_score')) || 0; } catch (e) { }
+                this.ui.highScore.innerText = hs;
+                this.loadSecretUnlocks();
+            }
+            updateLivesUI() {
+                for (let i = 0; i < 5; i++) {
+                    const h = document.getElementById(`heart-${i}`);
+                    if (h) { if (i >= this.maxVisibleHearts) h.style.display = 'none'; else { h.style.display = 'block'; h.src = (i < this.lives) ? 'herat_01.png' : 'heart_00.png'; } }
+                }
+            }
+            safePlay(sound) { if (sound) { try { sound.currentTime = 0; } catch (e) { } sound.play().catch(() => { }); } }
+            playTitleBGM() {
+                if (!this.titleBgm) return;
+                if (this.gameStartedInitiated) return;
+                try {
+                    this.titleBgm.pause();
+                    this.titleBgm.currentTime = 0;
+                    this.titleBgm.play().catch(() => { });
+                } catch (e) { }
+            }
+            stopTitleBGM() {
+                if (!this.titleBgm) return;
+                try { this.titleBgm.pause(); } catch (e) { }
+            }
+            loadSecretUnlocks() {
+                const defaultUnlocks = new Array(8).fill(false);
+                try {
+                    const raw = localStorage.getItem('wazaika_secret_unlocks');
+                    if (!raw) { this.secretUnlocks = defaultUnlocks; return; }
+                    const parsed = JSON.parse(raw);
+                    if (!Array.isArray(parsed) || parsed.length !== 8) { this.secretUnlocks = defaultUnlocks; return; }
+                    this.secretUnlocks = parsed.map(v => !!v);
+                } catch (e) {
+                    this.secretUnlocks = defaultUnlocks;
+                }
+            }
+
+            saveSecretUnlocks() {
+                try { localStorage.setItem('wazaika_secret_unlocks', JSON.stringify(this.secretUnlocks || new Array(8).fill(false))); } catch (e) { }
+            }
+
+            unlockSecret(majorStageNum) {
+                const n = parseInt(majorStageNum);
+                if (!n || n < 1 || n > 8) return;
+                if (!this.secretUnlocks) this.loadSecretUnlocks();
+                if (!this.secretUnlocks[n - 1]) {
+                    this.secretUnlocks[n - 1] = true;
+                    this.saveSecretUnlocks();
+                }
+            }
+
+            updateSecretScreen() {
+                const secretScreen = document.getElementById('secret-screen');
+                if (!secretScreen) return;
+                if (!this.secretUnlocks) this.loadSecretUnlocks();
+                const imgs = secretScreen.querySelectorAll('img[data-secret-id]');
+                imgs.forEach(img => {
+                    const id = parseInt(img.getAttribute('data-secret-id'));
+                    const unlocked = !!(id && this.secretUnlocks && this.secretUnlocks[id - 1]);
+                    img.style.visibility = unlocked ? 'visible' : 'hidden';
+                });
+            }
+            bindEvents() {
+                window.onkeydown = (e) => {
+                    if ((e.key === 'z' || e.key === 'Z') && !e.repeat) { DEBUG_INVINCIBLE = !DEBUG_INVINCIBLE; return; }
+                    if (!this.input.includes(e.key)) this.input.push(e.key);
+                    if (e.key === 'x' || e.key === 'X') this.player.switchWeapon();
+                };
+                window.onkeyup = (e) => { const i = this.input.indexOf(e.key); if (i > -1) this.input.splice(i, 1); };
+                const btnStart = document.getElementById('btn-start');
+                const btnSecret = document.getElementById('btn-secret');
+                const secretScreen = document.getElementById('secret-screen');
+                const startScreen = document.getElementById('start-screen');
+                const titleAudioMsg = document.getElementById('title-audio-msg');
+                const titleBtns = document.querySelector('#start-screen .title-btns');
+
+                if (startScreen && titleBtns && titleAudioMsg) {
+                    startScreen.onclick = () => {
+                        if (this.gameStartedInitiated) return;
+                        this.playTitleBGM();
+                        startScreen.classList.add('title-visible');
+                        if (this.ui.highScoreBoard) this.ui.highScoreBoard.classList.remove('hidden');
+                        titleAudioMsg.classList.add('hidden');
+                        titleBtns.classList.remove('hidden');
+                    };
+                }
+                if (btnStart) {
+                    btnStart.onclick = (e) => {
+                        e.stopPropagation();
+                        if (this.gameOver && !this.gameStartedInitiated) this.start();
+                    };
+                }
+                if (btnSecret && secretScreen) {
+                    btnSecret.onclick = (e) => {
+                        e.stopPropagation();
+                        this.ui.startScreen.classList.add('hidden');
+                        this.ui.highScoreBoard.classList.add('hidden');
+                        this.updateSecretScreen();
+                        secretScreen.classList.remove('hidden');
+                    };
+                    secretScreen.onclick = () => {
+                        secretScreen.classList.add('hidden');
+                        this.ui.startScreen.classList.remove('hidden');
+                        if (!this.gameStartedInitiated) this.ui.highScoreBoard.classList.remove('hidden');
+                    };
+                }
+                this.ui.gameOverScreen.onclick = () => {
+                    this.ui.gameOverScreen.classList.add('hidden');
+
+                    if (this.bgm) { try { this.bgm.pause(); } catch (e) { } }
+                    this.bgm = null;
+                    this.currentBGMFile = null;
+
+                    this.score = 0;
+                    this.init();
+                    if (this.ui.score) this.ui.score.innerText = this.score;
+                    if (this.ui.stage) this.ui.stage.innerText = '';
+                    if (this.ui.time) this.ui.time.innerText = '';
+
+                    this.gameStartedInitiated = false;
+                    this.gameOver = true;
+                    if (this.ui.uiLayer) this.ui.uiLayer.classList.add('hidden');
+                    if (this.ui.logo) this.ui.logo.classList.add('hidden');
+                    if (this.ui.startScreen) {
+                        this.ui.startScreen.classList.remove('hidden');
+                        if (titleBtns) titleBtns.classList.remove('hidden');
+                        this.playTitleBGM();
+                    }
+                };
+
+                this.ui.endingScreen.onclick = () => { if (this.endingTapEnabled) location.reload(); };
+                this.ui.weaponDisplay.onclick = () => this.player.switchWeapon();
+                const tl = (id, key) => { const b = document.getElementById(id); if (!b) return; b.ontouchstart = (e) => { e.preventDefault(); if (!this.input.includes(key)) this.input.push(key); }; b.ontouchend = (e) => { e.preventDefault(); const i = this.input.indexOf(key); if (i > -1) this.input.splice(i, 1); }; };
+                tl('btn-left', 'ArrowLeft'); tl('btn-right', 'ArrowRight');
+            }
+
+            start() {
+                this.gameStartedInitiated = true; this.safePlay(this.startSound); this.ui.startScreen.classList.add('hidden'); this.ui.highScoreBoard.classList.add('hidden');
+                this.stopTitleBGM();
+                this.score = 0; this.loadStage(0);
+            }
+            loadStage(idx, preserveSpawnedObjects = false) {
+                if (idx >= STAGE_CONFIG.length) { this.setGameOver(); return; }
+                const config = STAGE_CONFIG[idx]; if (config.opening) this.stageTime = 100;
+                this.killedCountInWave = 0;
+                this.mbremDropped = false;
+                if (!preserveSpawnedObjects) this.items = [];
+                this.midBossAttackStep = 0;
+                this.midBossAttackTimer = (config.waveLabel === '1-3' || config.waveLabel === '2-3' || config.waveLabel === '3-3') ? 1000 : 0;
+                this.bossAttackStep = 0;
+                this.bossAttackTimer = 0;
+
+                const majorStageNum = STAGE_MAP[idx];
+                if (this.currentMajorStage !== majorStageNum) {
+                    this.invaderBullets = [];
+                    this.hiddenItemHits = 0;
+                    this.hiddenItemFound = false;
+                    this.hiddenItemFlash = 0;
+                    this.currentMajorStage = majorStageNum;
+                    this.hiddenItemImage.src = `secret${String(majorStageNum).padStart(2, '0')}.png`;
+                }
+                this.hiddenItemPos = HIDDEN_ITEM_POSITIONS[majorStageNum - 1];
+
+                this.waveTransitioning = false; this.player.setWinPose(false);
+                const doLoad = () => {
+                    try {
+                        this.createInvaders(config); this.bgImage = new Image(); this.bgImage.src = config.bg;
+                        if (this.ui.stage) this.ui.stage.innerText = config.waveLabel;
+                        if (this.ui.score) this.ui.score.innerText = this.score;
+                        this.playBGM(config.bgm); this.gameOver = false;
+                        if (this.ui.uiLayer) this.ui.uiLayer.classList.remove('hidden');
+                        if (this.ui.logo) this.ui.logo.classList.remove('hidden');
+                        if (this.ui.time) this.ui.time.innerText = Math.ceil(this.stageTime);
+                        this.updateLivesUI();
+                    } catch (e) {
+                        try { console.error(e); } catch (_) { }
+                        this.showingOpening = false;
+                        this.gameOver = false;
+                        if (this.ui.uiLayer) this.ui.uiLayer.classList.remove('hidden');
+                        if (this.ui.logo) this.ui.logo.classList.remove('hidden');
+                    }
+                };
+                if (config.opening) this.showOpening(config.opening, doLoad); else doLoad();
+            }
+            showOpening(src, cb) {
+                this.ui.uiLayer.classList.add('hidden'); this.ui.logo.classList.add('hidden'); this.showingOpening = true; this.gameOver = true;
+                const proceed = () => { if (this.showingOpening) { this.showingOpening = false; if (cb) cb(); } };
+                this.openingImage = new Image(); this.openingImage.onload = () => setTimeout(proceed, 2000);
+                this.openingImage.onerror = proceed; this.openingImage.src = src;
+                setTimeout(() => { if (this.showingOpening) proceed(); }, 4000);
+            }
+            playBGM(file) {
+                if (this.currentBGMFile === file) return;
+                if (this.bgm) { try { this.bgm.pause(); } catch (e) { } this.bgm = null; }
+                this.bgm = new Audio(file); this.bgm.loop = true;
+                this.bgm.play().catch(() => { }); this.currentBGMFile = file;
+            }
+            createInvaders(config) {
+                this.invaders = [];
+                const { enemy, rows, cols, isMidBoss } = config;
+                const type = ENEMY_TYPES[enemy];
+
+                if (isMidBoss || type.isBoss) {
+                    if (isMidBoss && cols > 0) {
+                        const spacing = 80;
+                        const totalW = (cols - 1) * spacing;
+                        const startX = CANVAS_LOGICAL_WIDTH / 2 - totalW / 2 - (type.maxWidth * 2) / 2;
+
+                        if (config.waveLabel === '6-2') {
+                            this.invaders.push(new Invader(startX + 0 * spacing, 160, 'tengu', this, true));
+                            this.invaders.push(new Invader(startX + 1 * spacing, 160, 'tengu02', this, true));
+                        } else if (config.waveLabel === '6-3') {
+                            this.invaders.push(new Invader(startX + 0 * spacing, 160, 'tengu', this, true));
+                            this.invaders.push(new Invader(startX + 1 * spacing, 160, 'tengu02', this, true));
+                            this.invaders.push(new Invader(startX + 2 * spacing, 160, 'tengu03', this, true));
+                        } else {
+                            for (let c = 0; c < cols; c++) {
+                                this.invaders.push(new Invader(startX + c * spacing, 160, enemy, this, true));
+                            }
+                        }
+                    } else {
+                        const w = isMidBoss ? type.maxWidth * 2 : type.maxWidth;
+                        this.invaders.push(new Invader(CANVAS_LOGICAL_WIDTH / 2 - w / 2, 160, enemy, this, isMidBoss || false));
+                    }
+                    if (config.waveLabel === '8') {
+                        const sy = 260;
+                        const sx1 = 0;
+                        const sx2 = CANVAS_LOGICAL_WIDTH - ENEMY_TYPES['tinoishi'].maxWidth;
+                        this.invaders.push(new Invader(sx1, sy, 'tinoishi', this, false));
+                        this.invaders.push(new Invader(sx2, sy, 'tinoishi', this, false));
+                        const wy = this.player.y + (this.player.height / 2);
+                        this.items.push(new Item(60, wy, 'wakasa'));
+                    }
+                } else {
+                    if (config.waveLabel === '3-2' && enemy === 'hitotume02') {
+                        const spacing = 60, startX = (CANVAS_LOGICAL_WIDTH - (cols * spacing)) / 2 + spacing / 2 - 25;
+                        for (let r = 0; r < rows; r++) {
+                            for (let c = 0; c < cols; c++) {
+                                const isEnemy = ((r + c) % 2 === 1);
+                                if (!isEnemy) continue;
+                                this.invaders.push(new Invader(startX + c * spacing, 80 + r * spacing, enemy, this));
+                            }
+                        }
+                    } else {
+                        const spacing = (config.waveLabel === '5-1') ? 78 : 60, startX = (CANVAS_LOGICAL_WIDTH - (cols * spacing)) / 2 + spacing / 2 - 25;
+                        for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) { this.invaders.push(new Invader(startX + c * spacing, 80 + r * spacing, enemy, this)); } }
+                    }
+                }
+            }
+            update() {
+                if (this.gameOver || this.showingOpening) return;
+                if (this.stageTime > 0) { this.stageTime -= (this.frameDeltaSec || 0); this.ui.time.innerText = Math.ceil(this.stageTime); }
+
+                if (this.chyoka && !this.chyoka.markedForDeletion) {
+                    this.chyoka.timerSec -= (this.frameDeltaSec || 0);
+                    if (this.chyoka.timerSec <= 0) this.chyoka.markedForDeletion = true;
+                }
+                this.player.update(this.input);
+                let edge = false; const stageCfg = STAGE_CONFIG[this.currentStage];
+                this.aliveInvaderCount = this.invaders.reduce((n, inv) => n + ((inv && !inv.markedForDeletion) ? 1 : 0), 0);
+                this.visibleInvaderCount = this.invaders.reduce((n, inv) => n + ((inv && !inv.markedForDeletion && inv.isVisible) ? 1 : 0), 0);
+                this.visibleHyoutan02Count = this.invaders.reduce((n, inv) => n + ((inv && !inv.markedForDeletion && inv.isVisible && inv.typeName === 'hyoutan02') ? 1 : 0), 0);
+                const isEnraged12 = (stageCfg && stageCfg.waveLabel === '1-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5);
+                const isEnraged21 = (stageCfg && stageCfg.waveLabel === '2-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5);
+                const isEnraged22 = (stageCfg && stageCfg.waveLabel === '2-2' && this.visibleHyoutan02Count > 0 && this.visibleHyoutan02Count <= 3);
+                const isEnraged31 = (stageCfg && stageCfg.waveLabel === '3-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3);
+                const isEnraged32 = (stageCfg && stageCfg.waveLabel === '3-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5);
+                const isEnraged52 = (stageCfg && stageCfg.waveLabel === '5-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3);
+                const moveSpeedMul = (isEnraged12 ? 1.5 : (isEnraged21 ? 2 : ((isEnraged31 || isEnraged32) ? 2 : 1))) * (isEnraged52 ? 1.5 : 1);
+                this.invaders.forEach(inv => {
+                    inv.update(this.invaderDirection * stageCfg.speed * moveSpeedMul, 16, stageCfg.speed * moveSpeedMul);
+                    if (!inv.type.isBoss && !inv.type.verticalMove && !inv.type.randomMove && !inv.type.circleMove && !inv.type.canHide) { if (inv.x + inv.width > 390 || inv.x < 10) edge = true; }
+                });
+                if (edge) {
+                    this.invaderDirection *= -1;
+                    this.invaders.forEach(inv => {
+                        if (!inv.type.isBoss && !inv.type.verticalMove && !inv.type.randomMove && !inv.type.circleMove && !inv.type.canHide && inv.y < 400 && !(stageCfg.waveLabel === '1-3' && inv.isMidBoss)) {
+                            const isBossWave15 = (stageCfg && (stageCfg.waveLabel === '1-3' || stageCfg.waveLabel === '2-3' || stageCfg.waveLabel === '3-3' || stageCfg.waveLabel === '4-3' || stageCfg.waveLabel === '5-3'));
+                            if (inv.isMidBoss && isBossWave15) {
+                                const yLimit = (CANVAS_LOGICAL_HEIGHT / 2) - (inv.height / 2);
+                                inv.y = Math.min(inv.y + 15, yLimit);
+                            } else {
+                                inv.y += 15;
+                            }
+                        }
+                        inv.x = Math.max(10, Math.min(390 - inv.width, inv.x));
+                    });
+                }
+                if (stageCfg.waveLabel === '1-3' && stageCfg.isMidBoss && this.invaders.length > 0) {
+                    this.midBossAttackTimer -= (this.frameDeltaSec || 0) * 1000;
+                    if (this.midBossAttackTimer <= 0) {
+                        const s = this.invaders[0];
+                        if (s && s.isVisible && s.isMidBoss) {
+                            const cfg = s.type;
+                            const vyBase = 2.4; // 1-3ボスの弾は通常弾の速度に統一
+                            const baseR = (cfg.bulletRadius || 8) * 1.5;
+                            const r = (baseR * 2) * 0.7;
+
+                            const step = (this.midBossAttackStep || 0) % 6;
+                            if (step === 0 || step === 1 || step === 3 || step === 4) {
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, Math.abs(vyBase), cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            } else if (step === 2) {
+                                const count = 3;
+                                const speed = 3;
+                                const centerAngle = Math.PI / 2;
+                                const spread = 0.55;
+                                const startAngle = centerAngle - spread / 2;
+                                const stepA = (spread / (count - 1));
+                                for (let i = 0; i < count; i++) {
+                                    const a = startAngle + stepA * i;
+                                    const nvx = Math.cos(a) * speed;
+                                    const nvy = Math.sin(a) * speed;
+                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            } else if (step === 5) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                const avx = (dx / dist) * spd;
+                                const avy = (dy / dist) * spd;
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            }
+
+                            const intervals = [1000, 500, 1000, 1000, 500, 1000];
+                            this.midBossAttackStep = step + 1;
+                            this.midBossAttackTimer = intervals[step];
+                        } else {
+                            this.midBossAttackTimer = 500;
+                        }
+                    }
+                } else if (stageCfg.waveLabel === '2-3' && stageCfg.isMidBoss && this.invaders.length > 0) {
+                    this.midBossAttackTimer -= (this.frameDeltaSec || 0) * 1000;
+                    if (this.midBossAttackTimer <= 0) {
+                        const s = this.invaders[0];
+                        if (s && s.isVisible && s.isMidBoss) {
+                            const cfg = s.type;
+                            const vyBase = (Number.isFinite(stageCfg.enemyBulletVy) ? stageCfg.enemyBulletVy : 3);
+                            const baseR = (cfg.bulletRadius || 8) * 1.5;
+                            const r = (baseR * 2);
+
+                            const step = (this.midBossAttackStep || 0) % 9;
+
+                            if (step >= 0 && step <= 4) {
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, Math.abs(vyBase), cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            } else if (step === 6) {
+                                const b = new Bullet(s.x + s.width / 2, s.y + s.height, Math.abs(vyBase), cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r);
+                                b.oscillateX = true; b.baseVx = 0; b.oscAmp = 4.4; b.oscSpeed = 0.25;
+                                this.invaderBullets.push(b);
+                            } else if (step === 7 || step === 8) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = (step === 8) ? 4 : Math.abs(vyBase);
+                                const avx = (dx / dist) * spd;
+                                const avy = (dy / dist) * spd;
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            }
+
+                            const intervals = [300, 300, 300, 300, 1000, 1000, 1000, 500, 1000];
+                            this.midBossAttackStep = step + 1;
+                            this.midBossAttackTimer = intervals[step];
+                        } else {
+                            this.midBossAttackTimer = 500;
+                        }
+                    }
+                } else if (stageCfg.waveLabel === '3-3' && stageCfg.isMidBoss && this.invaders.length > 0) {
+                    this.midBossAttackTimer -= (this.frameDeltaSec || 0) * 1000;
+                    if (this.midBossAttackTimer <= 0) {
+                        const s = this.invaders[0];
+                        if (s && s.isVisible && s.isMidBoss) {
+                            const cfg = s.type;
+                            const vyBase = (Number.isFinite(stageCfg.enemyBulletVy) ? stageCfg.enemyBulletVy : 3);
+                            const baseR = (cfg.bulletRadius || 8) * 1.5;
+                            const r = (baseR * 2);
+
+                            const step = (this.midBossAttackStep || 0) % 4;
+
+                            const spawnFan3 = () => {
+                                const count = 3;
+                                const speed = Math.max(0.001, Math.abs(vyBase));
+                                const centerAngle = Math.PI / 2;
+                                const spread = 1.8;
+                                const startAngle = centerAngle - spread / 2;
+                                const stepA = (count === 1) ? 0 : (spread / (count - 1));
+                                const fanR = r * 0.75;
+                                for (let i = 0; i < count; i++) {
+                                    const a = startAngle + stepA * i;
+                                    const nvx = Math.cos(a) * speed;
+                                    const nvy = Math.sin(a) * speed;
+                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, fanR));
+                                }
+                            };
+
+                            if (step === 0 || step === 1 || step === 2) {
+                                spawnFan3();
+                            } else {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                const avx = (dx / dist) * spd;
+                                const avy = (dy / dist) * spd;
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            }
+
+                            this.midBossAttackStep = step + 1;
+                            this.midBossAttackTimer = 1000;
+                        } else {
+                            this.midBossAttackTimer = 500;
+                        }
+                    }
+                } else if (stageCfg.waveLabel === '4-3' && stageCfg.isMidBoss && this.invaders.length > 0) {
+                    this.midBossAttackTimer -= (this.frameDeltaSec || 0) * 1000;
+                    if (this.midBossAttackTimer <= 0) {
+                        const s = this.invaders[0];
+                        if (s && s.isMidBoss && !s.markedForDeletion && s.typeName === 'nuriyome03') {
+                            const cfg = s.type;
+                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                            const r = (baseR * 2);
+
+                            const teleportRandom = () => {
+                                s.x = Math.random() * (CANVAS_LOGICAL_WIDTH - s.width);
+                                s.y = Math.random() * 200 + 50;
+                            };
+                            const appearCenter = () => {
+                                s.x = (CANVAS_LOGICAL_WIDTH / 2) - (s.width / 2);
+                                s.y = 160;
+                            };
+                            const spawnFan = (count, spread, speed) => {
+                                const centerAngle = Math.PI / 2;
+                                const startAngle = centerAngle - spread / 2;
+                                const stepA = (count === 1) ? 0 : (spread / (count - 1));
+                                for (let i = 0; i < count; i++) {
+                                    const a = startAngle + stepA * i;
+                                    const nvx = Math.cos(a) * speed;
+                                    const nvy = Math.sin(a) * speed;
+                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            };
+                            const spawnAimed = (speed) => {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const avx = (dx / dist) * speed;
+                                const avy = (dy / dist) * speed;
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            };
+
+                            const step = (this.midBossAttackStep || 0);
+
+                            if (step === 0) {
+                                s.isVisible = true;
+                                appearCenter();
+                                this.midBossAttackStep = 100;
+                                this.midBossAttackTimer = 3000;
+                            } else if (step === 100) {
+                                s.isVisible = false;
+                                teleportRandom();
+                                this.midBossAttackStep = 1;
+                                this.midBossAttackTimer = 0;
+                            } else if (step === 1) {
+                                s.isVisible = true;
+                                spawnFan(3, 0.9, 3);
+                                this.midBossAttackStep = 2;
+                                this.midBossAttackTimer = 500;
+                            } else if (step === 2) {
+                                s.isVisible = false;
+                                teleportRandom();
+                                this.midBossAttackStep = 3;
+                                this.midBossAttackTimer = 0;
+                            } else if (step === 3) {
+                                s.isVisible = true;
+                                spawnFan(3, 0.9, 3);
+                                this.midBossAttackStep = 4;
+                                this.midBossAttackTimer = 500;
+                            } else if (step === 4) {
+                                s.isVisible = false;
+                                teleportRandom();
+                                this.midBossAttackStep = 5;
+                                this.midBossAttackTimer = 0;
+                            } else if (step === 5) {
+                                s.isVisible = true;
+                                spawnFan(4, 1.2, 3);
+                                this.midBossAttackStep = 6;
+                                this.midBossAttackTimer = 500;
+                            } else if (step === 6) {
+                                s.isVisible = false;
+                                teleportRandom();
+                                this.midBossAttackStep = 7;
+                                this.midBossAttackTimer = 0;
+                            } else if (step === 7) {
+                                s.isVisible = true;
+                                this.midBossAttackStep = 8;
+                                this.midBossAttackTimer = 3000;
+                            } else if (step === 8) {
+                                spawnAimed(3);
+                                spawnAimed(3.6);
+                                this.midBossAttackStep = 9;
+                                this.midBossAttackTimer = 1000;
+                            } else if (step === 9) {
+                                spawnAimed(3);
+                                spawnAimed(3.6);
+                                this.midBossAttackStep = 101;
+                                this.midBossAttackTimer = 1000;
+                            } else if (step === 101) {
+                                s.isVisible = false;
+                                teleportRandom();
+                                this.midBossAttackStep = 1;
+                                this.midBossAttackTimer = 0;
+                            } else {
+                                this.midBossAttackStep = 0;
+                                this.midBossAttackTimer = 0;
+                            }
+                        } else {
+                            this.midBossAttackTimer = 500;
+                        }
+                    }
+                } else if (stageCfg.waveLabel === '7' && this.invaders.length > 0) {
+                    this.bossAttackTimer -= (this.frameDeltaSec || 0) * 1000;
+                    if (this.bossAttackTimer <= 0) {
+                        const s = this.invaders[0];
+                        if (s && s.isVisible && s.type && s.type.isBoss && s.typeName === 'inugami01') {
+                            const y = 80;
+                            const speed = 3;
+                            const xs = [CANVAS_LOGICAL_WIDTH * 0.25, CANVAS_LOGICAL_WIDTH * 0.5, CANVAS_LOGICAL_WIDTH * 0.75];
+                            for (let i = 0; i < xs.length; i++) {
+                                const b = new Bullet(xs[i], y, 0, COLORS.CYAN, 0, true, 'circle', 'inugami01_kaminari.png', 30, false, false, 2, 60);
+                                b.preDelayMs = 3000;
+                                b.preDelayBlinkPeriodMs = 200;
+                                b.postDelayVy = speed;
+                                b.postDelayVx = 0;
+                                this.invaderBullets.push(b);
+                            }
+                            this.bossAttackTimer = 5000;
+                        } else {
+                            this.bossAttackTimer = 500;
+                        }
+                    }
+                } else {
+                    if ((stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && this.invaders.length > 0) {
+                        const dtMs = (this.frameDeltaSec || 0) * 1000;
+                        const playerCx = this.player.x + this.player.width / 2;
+                        const playerCy = this.player.y + this.player.height / 2;
+                        this.invaders.forEach(s => {
+                            if (!s || !s.isVisible) return;
+                            if (!(s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03')) return;
+
+                            const cfg = s.type;
+                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                            const r = (s.isMidBoss || cfg.isBoss) ? (baseR * 2) : baseR;
+
+                            if (!Number.isFinite(s.stage6GateTimerMs)) s.stage6GateTimerMs = 0;
+                            if (!Number.isFinite(s.stage6BurstTimerMs)) s.stage6BurstTimerMs = 0;
+                            if (!Number.isFinite(s.stage6BurstRemaining)) s.stage6BurstRemaining = 0;
+
+                            if (s.stage6BurstRemaining > 0) {
+                                s.stage6BurstTimerMs -= dtMs;
+                                if (s.stage6BurstTimerMs <= 0) {
+                                    if (s.typeName === 'tengu') {
+                                        this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, 2, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    } else if (s.typeName === 'tengu03') {
+                                        const dx = playerCx - (s.x + s.width / 2);
+                                        const dy = playerCy - (s.y + s.height);
+                                        const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                        const spd = 3;
+                                        const vx = (dx / dist) * spd;
+                                        const vy = (dy / dist) * spd;
+                                        this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    }
+                                    s.stage6BurstRemaining -= 1;
+                                    s.stage6BurstTimerMs = (s.typeName === 'tengu') ? 300 : 600;
+                                }
+                                return;
+                            }
+
+                            const gateInterval = (s.typeName === 'tengu') ? 1000 : (s.typeName === 'tengu02' ? 1300 : 1600);
+                            s.stage6GateTimerMs -= dtMs;
+                            if (s.stage6GateTimerMs > 0) return;
+                            s.stage6GateTimerMs = gateInterval;
+
+                            if (Math.random() >= 0.5) return;
+
+                            if (s.typeName === 'tengu02') {
+                                const spd = 2;
+                                const dx = playerCx - (s.x + s.width / 2);
+                                const dy = playerCy - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const vx = (dx / dist) * spd;
+                                const vy = (dy / dist) * spd;
+
+                                const speed = Math.max(0.001, Math.sqrt(vx * vx + vy * vy));
+                                const centerAngle = Math.atan2(vy, vx);
+                                const spread = 0.6;
+                                const count = 3;
+                                const startAngle = centerAngle - spread / 2;
+                                const step = spread / (count - 1);
+                                for (let i = 0; i < count; i++) {
+                                    const a = startAngle + step * i;
+                                    const nvx = Math.cos(a) * speed;
+                                    const nvy = Math.sin(a) * speed;
+                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            } else {
+                                s.stage6BurstRemaining = 3;
+                                s.stage6BurstTimerMs = 0;
+                            }
+                        });
+                    }
+                    if (stageCfg.waveLabel === '4-1' && this.invaders.length > 0) {
+                        this.invaders.forEach(s => {
+                            if (!s || !s.isVisible) return;
+                            if (s.spawnAttackResolved) return;
+                            s.spawnAttackResolved = true;
+
+                            const cfg = s.type;
+                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                            const r = baseR;
+                            const roll = Math.random();
+
+                            if (roll < 0.70) {
+                                return;
+                            } else if (roll < 0.90) {
+                                const vy = 4;
+                                const vx = 0;
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            } else {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                const avx = (dx / dist) * spd;
+                                const avy = (dy / dist) * spd;
+                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            }
+                        });
+                    } else {
+                    let shootProb = (stageCfg.isMidBoss ? 0.02 : 0.005);
+                    if (stageCfg.waveLabel === '1-2') shootProb *= 1.5;
+                    if (stageCfg.waveLabel === '3-1' || stageCfg.waveLabel === '3-2') shootProb *= 1.3333333333;
+                    if (stageCfg.waveLabel === '1-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 2;
+                    if (stageCfg.waveLabel === '2-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 2;
+                    if (stageCfg.waveLabel === '2-2' && this.visibleHyoutan02Count > 0 && this.visibleHyoutan02Count <= 3) shootProb *= 1.5;
+                    if (stageCfg.waveLabel === '3-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
+                    if (stageCfg.waveLabel === '3-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 1.5;
+                    if (stageCfg.waveLabel === '5-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
+                    if (stageCfg.waveLabel === '5-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
+                    if (Math.random() < shootProb && this.invaders.length > 0) {
+                        const s = this.invaders[Math.floor(Math.random() * this.invaders.length)]; if (s.isVisible) {
+                            if ((stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && (s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03')) return;
+                            if (!((stageCfg.waveLabel === '4-1' || stageCfg.waveLabel === '4-2') && s.type && s.type.canHide && this.aliveInvaderCount > 0 && this.aliveInvaderCount <= 3)) {
+                                const cfg = s.type; let vx = 0, vy = (Number.isFinite(stageCfg.enemyBulletVy) ? stageCfg.enemyBulletVy : 3);
+                            if (s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03' || s.type.isBoss || (stageCfg.waveLabel === '1-2' && Math.random() < 0.25)) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                let spd = (stageCfg.waveLabel === '1-2') ? 1.5 : 3;
+                                if (s.typeName === 'tengu03') {
+                                    vx = 0; vy = 3;
+                                } else {
+                                    vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                                }
+                            } else if (stageCfg.waveLabel === '2-1' && Math.random() < 0.20) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 2.5;
+                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                            } else if (stageCfg.waveLabel === '2-2' && Math.random() < 0.20) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                            } else if (stageCfg.waveLabel === '3-1' && Math.random() < 0.20) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 2.5;
+                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                            } else if (stageCfg.waveLabel === '3-2' && Math.random() < 0.20) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                            } else if ((stageCfg.waveLabel === '5-1' || stageCfg.waveLabel === '5-2') && Math.random() < 0.25) {
+                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 1.0;
+                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                            }
+                            const baseR = (stageCfg.waveLabel === '1-1' || stageCfg.waveLabel === '1-2') ? 14 : ((cfg.bulletRadius || 8) * 1.5);
+                            let r = (s.isMidBoss || cfg.isBoss) ? (baseR * 2) : baseR;
+                            if ((stageCfg.waveLabel === '2-1' || stageCfg.waveLabel === '2-2') && !s.isMidBoss && !cfg.isBoss) r = r * 2;
+                            if ((stageCfg.waveLabel === '5-1' || stageCfg.waveLabel === '5-2') && !s.isMidBoss && !cfg.isBoss) r = r * 2;
+
+                            if (s.isMidBoss || cfg.isBoss) {
+                                s.shotPatternCounter = (s.shotPatternCounter || 0) + 1;
+                                let isFan = (s.shotPatternCounter % 3 === 0);
+                                if (s.typeName === 'tengu02') isFan = true;
+                                if (s.typeName === 'tengu03') isFan = false;
+                                if (isFan) {
+                                    const count = 3;
+                                    const speed = Math.max(0.001, Math.sqrt(vx * vx + vy * vy));
+                                    const centerAngle = Math.atan2(vy, vx);
+                                    const spread = 0.6;
+                                    const startAngle = centerAngle - spread / 2;
+                                    const step = (count === 1) ? 0 : (spread / (count - 1));
+                                    for (let i = 0; i < count; i++) {
+                                        const a = startAngle + step * i;
+                                        const nvx = Math.cos(a) * speed;
+                                        const nvy = Math.sin(a) * speed;
+                                        this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    }
+                                } else {
+                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            } else {
+                                if ((stageCfg.waveLabel === '2-1' || stageCfg.waveLabel === '2-2') && Math.random() < 0.18) {
+                                    const b = new Bullet(s.x + s.width / 2, s.y + s.height, vy * 0.35, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r);
+                                    b.oscillateX = true; b.baseVx = vx; b.oscAmp = 6.6; b.oscSpeed = 0.25;
+                                    this.invaderBullets.push(b);
+                                } else {
+                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            }
+                            }
+                        }
+                    }
+                    }
+                }
+                this.checkCollisions();
+                this.invaderBullets.forEach(b => b.update()); this.invaderBullets = this.invaderBullets.filter(b => !b.markedForDeletion);
+                this.items.forEach(it => it.update()); this.items = this.items.filter(it => !it.markedForDeletion);
+                this.blasts.forEach(b => b.update()); this.blasts = this.blasts.filter(b => !b.markedForDeletion);
+                this.souls.forEach(s => { s.update(); if (s.markedForDeletion && this.ui.logo) { this.ui.logo.classList.remove('glow-active'); void this.ui.logo.offsetWidth; this.ui.logo.classList.add('glow-active'); } });
+                this.souls = this.souls.filter(s => !s.markedForDeletion);
+                this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => p.alpha > 0);
+                if (this.pendingInvaders.length > 0) { this.invaders.push(...this.pendingInvaders); this.pendingInvaders = []; }
+                if (this.invaders.length === 0 && !this.waveTransitioning) {
+                    const c = STAGE_CONFIG[this.currentStage];
+                    const isStage6SubWave = (c && (c.waveLabel === '6-1' || c.waveLabel === '6-2'));
+                    const isMidBossClear = (!isStage6SubWave && c.isMidBoss) || (c.enemy.includes('inugami'));
+
+                    // 指示：ステージクリア（ボス戦後）のみ弾やエフェクトが消えるのを待つ
+                    if (isMidBossClear) {
+                        if (this.player.bullets.length > 0 || this.souls.length > 0 || this.blasts.length > 0) return;
+                    }
+
+                    this.waveTransitioning = true;
+                    if (isMidBossClear) {
+                        // ステージクリア演出シーケンス
+                        this.gameOver = true;
+                        if (this.bgm) this.bgm.pause();
+                        this.safePlay(this.clearSound); // 1. ステージクリアSE再生
+                        this.player.setWinPose(true);
+                        const bonus = Math.ceil(this.stageTime) * 100;
+                        this.score += bonus;
+                        this.ui.score.innerText = this.score;
+                        this.ui.stageClear.innerText = `ステージクリア\nボーナス +${bonus}`;
+                        this.ui.stageClear.classList.remove('hidden');
+
+                        // 指定フローの実行
+                        setTimeout(() => {
+                            this.safePlay(this.recoverySound); // 2. recovery3.oggを鳴らす
+                            this.lives = this.maxVisibleHearts; // 3. ライフを満タンまで回復
+                            this.updateLivesUI();
+
+                            setTimeout(() => {
+                                const advance = () => {
+                                    this.ui.stageClear.classList.remove('stage-clear-tappable');
+                                    this.ui.stageClear.onclick = null;
+                                    this.ui.stageClear.classList.add('hidden');
+
+                                    // 指示：8面クリア時はエンディングへ、それ以外は次へ
+                                    if (this.currentMajorStage === 8) {
+                                        this.showEnding();
+                                    } else {
+                                        this.currentStage++;
+                                        this.loadStage(this.currentStage);
+                                    }
+                                };
+
+                                let bonusImg = null;
+                                if (!this.bonusLife2Granted && this.score >= 60000) {
+                                    bonusImg = 'bonus02.png';
+                                    this.maxVisibleHearts = 5;
+                                    this.bonusLife2Granted = true;
+                                    this.bonusLife1Granted = true;
+                                } else if (!this.bonusLife1Granted && this.score >= 30000) {
+                                    bonusImg = 'bonus01.png';
+                                    this.maxVisibleHearts = 4;
+                                    this.bonusLife1Granted = true;
+                                }
+
+                                if (bonusImg) {
+                                    this.lives = this.maxVisibleHearts;
+                                    this.updateLivesUI();
+                                    this.safePlay(this.bonusSound);
+                                    this.ui.stageClear.innerHTML = `<img src="${bonusImg}" alt="bonus">`;
+                                    this.ui.stageClear.classList.add('stage-clear-tappable');
+                                    this.ui.stageClear.onclick = advance;
+                                } else {
+                                    advance();
+                                }
+                            }, 1500);
+                        }, 1500);
+
+                    } else {
+                        // 通常ウェーブ移行（1-1から1-2など）は弾の残存を無視して即座に進む
+                        setTimeout(() => { this.currentStage++; this.loadStage(this.currentStage, true); }, 500);
+                    }
+                }
+            }
+            setGameOver() {
+                this.gameOver = true;
+                if (this.bgm) { try { this.bgm.pause(); } catch (e) { } }
+                this.safePlay(this.gameOverSound);
+                if (this.ui.uiLayer) this.ui.uiLayer.classList.add('hidden');
+                if (this.ui.logo) this.ui.logo.classList.add('hidden');
+                const fs = document.getElementById('final-score');
+                if (fs) fs.innerText = this.score;
+                if (this.ui.gameOverScreen) this.ui.gameOverScreen.classList.remove('hidden');
+                let hs = 0; try { hs = parseInt(localStorage.getItem('wazaika_high_score')) || 0; } catch (e) { }
+                if (this.score > hs) localStorage.setItem('wazaika_high_score', this.score);
+            }
+            showEnding() {
+                this.gameOver = true;
+                this.ui.uiLayer.classList.add('hidden');
+                this.ui.logo.classList.add('hidden');
+                this.ui.endFinalScore.innerText = this.score;
+                this.ui.endingScreen.classList.remove('hidden');
+                this.endingTapEnabled = false;
+                if (this.ui.endingTapHint) this.ui.endingTapHint.classList.add('hidden');
+                const ec = document.getElementById('ending-credits');
+                if (ec) {
+                    ec.classList.remove('scroll');
+                    void ec.offsetWidth;
+                    ec.classList.add('scroll');
+                    ec.onanimationend = () => {
+                        this.endingTapEnabled = true;
+                        if (this.ui.endingTapHint) this.ui.endingTapHint.classList.remove('hidden');
+                    };
+                }
+                let hs = 0; try { hs = parseInt(localStorage.getItem('wazaika_high_score')) || 0; } catch (e) { }
+                if (this.score > hs) localStorage.setItem('wazaika_high_score', this.score);
+            }
+            checkCollisions() {
+                const pHit = { x: this.player.x + 12, y: this.player.y + 10, width: this.player.width - 24, height: this.player.height - 20 };
+                const explosions = [];
+                const stageCfg = STAGE_CONFIG[this.currentStage];
+                this.player.bullets.forEach(b => {
+                    if (b.markedForDeletion) return;
+
+                    if (stageCfg && stageCfg.waveLabel === '4-3') {
+                        for (let eb of this.invaderBullets) {
+                            if (!eb || eb.markedForDeletion) continue;
+                            if (this.rectHit(b, eb)) {
+                                eb.markedForDeletion = true;
+                                this.score += 50;
+                                this.ui.score.innerText = this.score;
+                                this.safePlay(this.katanaSound);
+                                if (!b.isLaser) b.markedForDeletion = true;
+                                break;
+                            }
+                        }
+                        if (b.markedForDeletion) return;
+                    }
+
+                    if (this.chyoka && !this.chyoka.markedForDeletion && this.rectHit(b, this.chyoka)) {
+                        this.chyoka.markedForDeletion = true;
+                        b.markedForDeletion = true;
+                        this.score += 5000;
+                        this.ui.score.innerText = this.score;
+                        for (let i = 0; i < 60; i++) this.souls.push(new SoulParticle(this.chyoka.x + this.chyoka.width / 2, this.chyoka.y + this.chyoka.height / 2, 2));
+                        return;
+                    }
+
+                    // 隠しアイテムとの衝突判定 (発見前のみ判定)
+                    if (!this.hiddenItemFound) {
+                        const dist = Math.sqrt(Math.pow(b.x - this.hiddenItemPos.x, 2) + Math.pow(b.y - this.hiddenItemPos.y, 2));
+                        if (dist < 20) {
+                            this.hiddenItemHits++;
+                            this.hiddenItemFlash = 3;
+                            this.safePlay(this.katanaSound); // ヒット音再生
+                            b.markedForDeletion = true;
+                            if (this.hiddenItemHits >= 3) {
+                                this.hiddenItemFound = true;
+                                this.unlockSecret(this.currentMajorStage);
+                                this.score += 10000;
+                                this.ui.score.innerText = this.score;
+                                this.safePlay(this.successSound);
+                                for (let i = 0; i < 50; i++) this.souls.push(new SoulParticle(this.hiddenItemPos.x, this.hiddenItemPos.y, 2));
+                                this.blasts.push(new BlastEffect(this.hiddenItemPos.x, this.hiddenItemPos.y, 80));
+                            }
+                        }
+                    }
+
+                    for (let inv of this.invaders) {
+                        if (inv.isVisible && !inv.markedForDeletion && this.rectHit(b, inv)) {
+                            if (b.isLaser) {
+                                if (!b.hitEnemies.has(inv)) {
+                                    this.applyDamage(inv, b.damage);
+                                    b.hitEnemies.add(inv);
+                                }
+                            } else {
+                                b.markedForDeletion = true;
+                                if (b.sourceWeaponType === 'normal' && !this.player.isReloading) {
+                                    this.player.isReloading = true;
+                                    setTimeout(() => { this.player.isReloading = false; }, 1000);
+                                }
+                                if (b.isExplosive) explosions.push({ x: b.x, y: b.y, damage: b.splashDamage }); else this.applyDamage(inv, b.damage);
+                                break;
+                            }
+                        }
+                    }
+                });
+                explosions.forEach(e => { const br = 60; this.blasts.push(new BlastEffect(e.x, e.y, br)); for (let inv of this.invaders) { if (!inv.isVisible || inv.markedForDeletion) continue; const dx = (inv.x + inv.width / 2) - e.x, dy = (inv.y + inv.height / 2) - e.y; if (Math.sqrt(dx * dx + dy * dy) < br + inv.width / 2) this.applyDamage(inv, e.damage); } });
+
+                // 5-3ボス(oni03)接触ダメージ
+                if (stageCfg && stageCfg.waveLabel === '5-3') {
+                    for (let inv of this.invaders) {
+                        if (!inv || inv.markedForDeletion || !inv.isVisible) continue;
+                        if (inv.typeName !== 'oni03') continue;
+                        if (this.player.isInvincible) continue;
+                        if (this.rectHit(inv, pHit)) {
+                            if (!DEBUG_INVINCIBLE) {
+                                this.lives -= 2;
+                                this.updateLivesUI();
+                                this.safePlay(this.playerDamageSound);
+                                if (!this.player.wakasaOptionActive) this.player.setWeaponByIndex(0);
+                                if (this.lives <= 0) this.setGameOver();
+                                else { this.player.isInvincible = true; this.player.invincibleTimer = 1000; }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // アイテム取得判定
+                this.items.forEach(it => {
+                    if (!it.markedForDeletion && this.rectHit(it, pHit)) {
+                        it.markedForDeletion = true;
+
+                        // 武器・特殊アイテム共通の取得音再生
+                        if (it.type !== 'koban' && it.type !== 'imo') {
+                            this.safePlay(this.pupSound);
+                        }
+
+                        if (it.type === 'wakasa') {
+                            this.player.wakasaOptionActive = true;
+                            for (let i = 0; i < 40; i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
+                        } else if (it.type === 'mbrem') {
+                            this.player.isInvincible = true;
+                            this.player.invincibleTimer = 5000;
+                            this.lives = this.maxVisibleHearts;
+                            this.updateLivesUI();
+                            for (let i = 0; i < 60; i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
+                        } else if (it.type === 'koban') {
+                            // 小判専用SE再生
+                            this.safePlay(this.kobanSound);
+                            // 小判効果: 500点加算
+                            this.score += 500;
+                            this.ui.score.innerText = this.score;
+                            for (let i = 0; i < 30; i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
+                        } else if (it.type === 'imo') {
+                            // 回復アイテム
+                            this.safePlay(this.healSound);
+                            if (this.lives < 3) {
+                                this.lives++;
+                                this.updateLivesUI();
+                            }
+                            this.score += 100;
+                            this.ui.score.innerText = this.score;
+                            for (let i = 0; i < 30; i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
+                            for (let i = 0; i < 15; i++) this.particles.push(new Particle(it.x, it.y, COLORS.GREEN));
+                        } else {
+                            // 既存アイテム (武器系)
+                            this.powerUpItemCount++;
+                            if (this.powerUpItemCount % 3 === 0) {
+                                const w = 70, h = 70;
+                                const xs = [Math.round(CANVAS_LOGICAL_WIDTH * 0.25 - w / 2), Math.round(CANVAS_LOGICAL_WIDTH * 0.50 - w / 2), Math.round(CANVAS_LOGICAL_WIDTH * 0.75 - w / 2)];
+                                const x = xs[Math.floor(Math.random() * xs.length)];
+                                const y = 170;
+                                this.chyoka = { x, y, width: w, height: h, timerSec: 3, markedForDeletion: false };
+                            }
+                            switch (it.type) {
+                                case 'totu': this.player.setWeaponByIndex(4); break;
+                                case 'baku': this.player.setWeaponByIndex(3); break;
+                                case 'ren': this.player.setWeaponByIndex(1); break;
+                                case 'san': this.player.setWeaponByIndex(2); break;
+                            }
+                        }
+                    }
+                });
+
+                this.invaderBullets.forEach(b => {
+                    if (!b.markedForDeletion && !this.player.isInvincible && this.rectHit(b, pHit)) {
+                        b.markedForDeletion = true;
+                        if (!DEBUG_INVINCIBLE) {
+                            this.lives--;
+                            this.updateLivesUI();
+                            this.safePlay(this.playerDamageSound);
+                            if (!this.player.wakasaOptionActive) this.player.setWeaponByIndex(0);
+                            if (this.lives <= 0) this.setGameOver();
+                            else { this.player.isInvincible = true; this.player.invincibleTimer = 1000; }
+                        }
+                    }
+                });
+                this.invaders = this.invaders.filter(i => !i.markedForDeletion);
+            }
+            applyDamage(inv, dmg) {
+                if (inv.markedForDeletion) return; inv.health -= dmg; inv.hitFlash = 3; this.safePlay(this.damageSound);
+
+                if (inv.type && inv.type.isBoss && inv.typeName === 'inugami01') {
+                    const hpRate = (inv.maxHealth > 0) ? (inv.health / inv.maxHealth) : 0;
+                    if (!inv.bossDrop70Done && hpRate <= 0.70) {
+                        inv.bossDrop70Done = true;
+                        const types = ['totu', 'baku', 'ren', 'san'];
+                        const dropType = types[Math.floor(Math.random() * types.length)];
+                        this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
+                    }
+                    if (!inv.bossDrop30Done && hpRate <= 0.30) {
+                        inv.bossDrop30Done = true;
+                        const types = ['totu', 'baku', 'ren', 'san'];
+                        const dropType = types[Math.floor(Math.random() * types.length)];
+                        this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
+                    }
+                }
+                if (inv.health <= 0) {
+                    inv.markedForDeletion = true;
+                    // --- 敵に応じたスコア加算 ---
+                    let addedScore = 10;
+                    if (inv.type.isBoss) {
+                        if (inv.typeName === 'inugami01') addedScore = 10000;
+                        else if (inv.typeName === 'inugami02') addedScore = 20000;
+                    } else if (inv.isMidBoss) {
+                        if (inv.typeName === 'tengu') addedScore = 3000;
+                        else addedScore = 1000;
+                    } else {
+                        if (inv.typeName.includes('hitotume')) addedScore = 100;
+                        else if (inv.typeName.includes('oni')) addedScore = 80;
+                        else if (inv.typeName.includes('hyoutan')) addedScore = 50;
+                        else if (inv.typeName.includes('nuriyome')) addedScore = 30;
+                    }
+                    this.score += addedScore;
+                    this.ui.score.innerText = this.score;
+
+                    this.killedCountInWave++;
+
+                    const stageCfg = STAGE_CONFIG[this.currentStage];
+                    if (stageCfg && stageCfg.waveLabel === '8' && inv.typeName === 'tinoishi' && !this.mbremDropped) {
+                        this.mbremDropped = true;
+                        this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, 'mbrem'));
+                    }
+                    if (inv.isMidBoss && stageCfg && (stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && (inv.typeName === 'tengu' || inv.typeName === 'tengu02')) {
+                        const types = ['totu', 'baku', 'ren', 'san'];
+                        const dropType = types[Math.floor(Math.random() * types.length)];
+                        this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
+                    }
+                    if (!stageCfg.isMidBoss && !ENEMY_TYPES[inv.typeName].isBoss) {
+                        // 既存の3体ごと武器ドロップ
+                        if (this.killedCountInWave === 3) {
+                            const types = ['totu', 'baku', 'ren', 'san'];
+                            const dropType = types[Math.floor(Math.random() * types.length)];
+                            this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
+                        } else {
+                            // 武器が出なかった場合のみ、ランダムドロップ抽選を行う
+                            // 分裂後のミニひょうたんはアイテムを落とさないように除外する
+                            if (inv.typeName !== 'miniHyoutan') {
+                                const rand = Math.random();
+                                if (rand < 0.20) {
+                                    // 20%の確率で小判 (koban)
+                                    this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, 'koban'));
+                                } else if (rand < 0.30) {
+                                    // 10% (0.20 ~ 0.30未満)の確率で回復アイテム (imo)
+                                    this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, 'imo'));
+                                }
+                            }
+                        }
+                    }
+
+                    let sc = 3, sm = 1; if (inv.type.isBoss) { sc = 100; sm = 3; } else if (inv.isMidBoss) { sc = 30; sm = 2; }
+                    for (let i = 0; i < sc; i++) this.souls.push(new SoulParticle(inv.x + inv.width / 2, inv.y + inv.height / 2, sm));
+                    if (inv.typeName === 'hitotume' || inv.typeName === 'hitotume02') {
+                        this.invaderBullets.push(new Bullet(inv.x + inv.width / 2, inv.y + inv.height, 3, COLORS.YELLOW, 2, true, 'star', 'hitotume_tama.png', 12));
+                        this.invaderBullets.push(new Bullet(inv.x + inv.width / 2, inv.y + inv.height, 3, COLORS.YELLOW, -2, true, 'star', 'hitotume_tama.png', 12));
+                    } else if (inv.typeName === 'hitotume03') {
+                        const cx = inv.x + inv.width / 2;
+                        const cy = inv.y + inv.height;
+                        const vy = 3;
+                        const r = 24;
+                        const vxs = [-4, -2, 0, 2, 4];
+                        for (let i = 0; i < vxs.length; i++) {
+                            this.invaderBullets.push(new Bullet(cx, cy, vy, COLORS.YELLOW, vxs[i], true, 'star', 'hitotume_tama.png', r));
+                        }
+                    }
+                    if (inv.type.splitInto && !inv.isMidBoss) { for (let i = 0; i < 2; i++) this.pendingInvaders.push(new Invader(inv.x + (i === 0 ? -15 : 15), inv.y, inv.type.splitInto, this)); }
+                    for (let i = 0; i < 8; i++) this.particles.push(new Particle(inv.x + inv.width / 2, inv.y + inv.height / 2, inv.color));
+                }
+            }
+            rectHit(a, b) {
+                const aIsCenter = (a instanceof Bullet) || (a instanceof Item) || (a && a.centerBased === true);
+                const bIsCenter = (b instanceof Bullet) || (b instanceof Item) || (b && b.centerBased === true);
+
+                const ax = aIsCenter ? (a.x - a.width / 2) : a.x;
+                const ay = aIsCenter ? (a.y - a.height / 2) : a.y;
+                const bx = bIsCenter ? (b.x - b.width / 2) : b.x;
+                const by = bIsCenter ? (b.y - b.height / 2) : b.y;
+
+                return ax < bx + b.width && ax + a.width > bx && ay < by + b.height && ay + a.height > by;
+            }
+
+            draw() {
+                if (this.gameOver && !this.showingOpening) return;
+                if (this.showingOpening) {
+                    if (this.openingImage && this.openingImage.complete) this.ctx.drawImage(this.openingImage, 0, 0, 400, 600);
+                    return;
+                }
+                this.ctx.clearRect(0, 0, 400, 600);
+                if (this.bgImage.complete) this.ctx.drawImage(this.bgImage, 0, 0, 400, 600);
+
+                // 隠しアイテムの描画
+                if (this.hiddenItemFound) {
+                    this.ctx.save();
+                    if (this.hiddenItemImage.complete) {
+                        this.ctx.drawImage(this.hiddenItemImage, this.hiddenItemPos.x - 35, this.hiddenItemPos.y - 35, 70, 70);
+                    } else {
+                        this.ctx.fillStyle = COLORS.GOLD;
+                        this.ctx.beginPath();
+                        this.ctx.arc(this.hiddenItemPos.x, this.hiddenItemPos.y, 35, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                    this.ctx.restore();
+                } else if (this.hiddenItemFlash > 0) {
+                    // 隠れているときに弾が当たった瞬間のフィードバック（白光り）
+                    this.ctx.save();
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.hiddenItemPos.x, this.hiddenItemPos.y, 20, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.hiddenItemFlash--;
+                    this.ctx.restore();
+                }
+
+                if (this.chyoka && !this.chyoka.markedForDeletion) {
+                    this.ctx.save();
+                    // 光輪エフェクト
+                    const pulse = Math.sin(Date.now() * 0.005) * 0.3 + 0.7;
+                    this.ctx.strokeStyle = `rgba(255, 215, 0, ${pulse})`;
+                    this.ctx.lineWidth = 3;
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.chyoka.x + this.chyoka.width / 2, this.chyoka.y + this.chyoka.height / 2, this.chyoka.width / 2 + 8, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    // 本体描画
+                    if (this.chyokaImage && this.chyokaImage.complete) {
+                        this.ctx.drawImage(this.chyokaImage, this.chyoka.x, this.chyoka.y, this.chyoka.width, this.chyoka.height);
+                    } else {
+                        this.ctx.fillStyle = COLORS.GOLD;
+                        this.ctx.fillRect(this.chyoka.x, this.chyoka.y, this.chyoka.width, this.chyoka.height);
+                    }
+                    this.ctx.restore();
+                }
+
+                this.items.forEach(it => it.draw(this.ctx));
+                this.invaders.forEach(i => i.draw(this.ctx));
+                this.player.draw(this.ctx);
+                this.invaderBullets.forEach(b => b.draw(this.ctx));
+                this.souls.forEach(s => s.draw(this.ctx));
+                this.blasts.forEach(b => b.draw(this.ctx));
+                this.particles.forEach(p => p.draw(this.ctx));
+            }
+            loop(ts) {
+                if (this.lastFrameTs == null) this.lastFrameTs = ts;
+                const dt = ts - this.lastFrameTs;
+                this.lastFrameTs = ts;
+                this.frameDeltaSec = Math.max(0, Math.min(0.2, dt / 1000));
+                this.update();
+                this.draw();
+                requestAnimationFrame(this.loop.bind(this));
+            }
+        }
+        window.onload = () => { window.game = new Game(); };
+    </script>
+</body>
+
+</html>
