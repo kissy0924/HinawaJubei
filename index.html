@@ -842,7 +842,11 @@ Presented by
                         break;
                     case 'baku':
                         this.isReloading = true;
-                        this.bullets.push(new Bullet(cx, cy, -2.5, COLORS.YELLOW, 0, false, 'circle', 'tama_baku.png', 15, true, false, 2, null, 1));
+                        {
+                            const b = new Bullet(cx, cy, -2.5, COLORS.YELLOW, 0, false, 'circle', 'tama_baku.png', 15, true, false, 2, null, 1);
+                            b.sourceWeaponType = 'baku';
+                            this.bullets.push(b);
+                        }
                         this.game.safePlay(this.game.shotSound);
                         setTimeout(() => { this.isReloading = false; }, 1800);
                         break;
@@ -962,6 +966,7 @@ Presented by
             }
 
             update(velocity, deltaTime, stageSpeed) {
+                if (this.typeName === 'tinoishi') return;
                 if (this.type.canHide) {
                     const isPowerUp = (this.game && this.game.player && this.game.player.weaponIdx === 4);
                     const isPowerUp41 = (this.game && Number.isFinite(this.game.currentStage) && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-1');
@@ -1284,7 +1289,8 @@ Presented by
                 this.secretUnlocks = null;
                 this.lastFrameTs = null;
                 this.frameDeltaSec = 0;
-                this.setupAudio(); this.score = 0; this.init(); this.bindEvents();
+                this.audioInitialized = false;
+                this.score = 0; this.init(); this.bindEvents();
                 requestAnimationFrame(this.loop.bind(this));
             }
             setupAudio() {
@@ -1305,6 +1311,11 @@ Presented by
 
                 this.titleBgm = s('opning.mp3');
                 if (this.titleBgm) this.titleBgm.loop = true;
+            }
+            ensureAudioInitialized() {
+                if (this.audioInitialized) return;
+                this.setupAudio();
+                this.audioInitialized = true;
             }
             init() {
                 this.player = new Player(this); this.invaders = []; this.souls = []; this.blasts = []; this.particles = [];
@@ -1412,6 +1423,7 @@ Presented by
                 if (startScreen && titleBtns && titleAudioMsg) {
                     startScreen.onclick = () => {
                         if (this.gameStartedInitiated) return;
+                        this.ensureAudioInitialized();
                         this.playTitleBGM();
                         startScreen.classList.add('title-visible');
                         if (this.ui.highScoreBoard) this.ui.highScoreBoard.classList.remove('hidden');
@@ -1422,6 +1434,7 @@ Presented by
                 if (btnStart) {
                     btnStart.onclick = (e) => {
                         e.stopPropagation();
+                        this.ensureAudioInitialized();
                         if (this.gameOver && !this.gameStartedInitiated) this.start();
                     };
                 }
@@ -1796,7 +1809,7 @@ Presented by
                                 this.midBossAttackTimer = 0;
                             } else if (step === 1) {
                                 s.isVisible = true;
-                                spawnFan(3, 0.9, 3);
+                                spawnFan(3, 1.5, 3);
                                 this.midBossAttackStep = 2;
                                 this.midBossAttackTimer = 500;
                             } else if (step === 2) {
@@ -1806,7 +1819,7 @@ Presented by
                                 this.midBossAttackTimer = 0;
                             } else if (step === 3) {
                                 s.isVisible = true;
-                                spawnFan(3, 0.9, 3);
+                                spawnFan(3, 1.5, 3);
                                 this.midBossAttackStep = 4;
                                 this.midBossAttackTimer = 500;
                             } else if (step === 4) {
@@ -1816,7 +1829,7 @@ Presented by
                                 this.midBossAttackTimer = 0;
                             } else if (step === 5) {
                                 s.isVisible = true;
-                                spawnFan(3, 0.9, 3);
+                                spawnFan(3, 1.5, 3);
                                 this.midBossAttackStep = 6;
                                 this.midBossAttackTimer = 500;
                             } else if (step === 6) {
@@ -1842,20 +1855,319 @@ Presented by
                     if (this.bossAttackTimer <= 0) {
                         const s = this.invaders[0];
                         if (s && s.isVisible && s.type && s.type.isBoss && s.typeName === 'inugami01') {
-                            const y = 80;
-                            const speed = 3;
-                            const xs = [CANVAS_LOGICAL_WIDTH * 0.25, CANVAS_LOGICAL_WIDTH * 0.5, CANVAS_LOGICAL_WIDTH * 0.75];
-                            for (let i = 0; i < xs.length; i++) {
-                                const b = new Bullet(xs[i], y, 0, COLORS.CYAN, 0, true, 'circle', 'inugami01_kaminari.png', 30, false, false, 2, 60);
-                                b.preDelayMs = 3000;
-                                b.preDelayBlinkPeriodMs = 200;
-                                b.postDelayVy = speed;
-                                b.postDelayVx = 0;
-                                this.invaderBullets.push(b);
+                            const hpRate = (s.maxHealth > 0) ? (s.health / s.maxHealth) : 1;
+
+                            // HP70%以下で「上部出現→数秒後に真下へ飛ぶ（雷）」を発動。3本のX位置は毎回ランダム。
+                            if (hpRate <= 0.70) {
+                                const y = 80;
+                                const speed = 3;
+
+                                const pickThunderXs = () => {
+                                    const candidates = [
+                                        CANVAS_LOGICAL_WIDTH * 0.15,
+                                        CANVAS_LOGICAL_WIDTH * 0.35,
+                                        CANVAS_LOGICAL_WIDTH * 0.50,
+                                        CANVAS_LOGICAL_WIDTH * 0.65,
+                                        CANVAS_LOGICAL_WIDTH * 0.85
+                                    ];
+                                    for (let i = candidates.length - 1; i > 0; i--) {
+                                        const j = Math.floor(Math.random() * (i + 1));
+                                        const tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
+                                    }
+                                    const chosen = [];
+                                    const minDist = 80;
+                                    for (let i = 0; i < candidates.length; i++) {
+                                        const x = candidates[i];
+                                        if (chosen.every(cx => Math.abs(cx - x) >= minDist)) chosen.push(x);
+                                        if (chosen.length >= 3) break;
+                                    }
+                                    if (chosen.length < 3) {
+                                        return [CANVAS_LOGICAL_WIDTH * 0.25, CANVAS_LOGICAL_WIDTH * 0.5, CANVAS_LOGICAL_WIDTH * 0.75];
+                                    }
+                                    return chosen;
+                                };
+
+                                const xs = pickThunderXs();
+                                for (let i = 0; i < xs.length; i++) {
+                                    const b = new Bullet(xs[i], y, 0, COLORS.CYAN, 0, true, 'circle', 'inugami01_kaminari.png', 30, false, false, 2, 60);
+                                    b.preDelayMs = 3000;
+                                    b.preDelayBlinkPeriodMs = 200;
+                                    b.postDelayVy = speed;
+                                    b.postDelayVx = 0;
+                                    this.invaderBullets.push(b);
+                                }
                             }
+
+                            // 雷は従来どおり5秒周期（HP70%以上のときは出ない）
                             this.bossAttackTimer = 5000;
                         } else {
                             this.bossAttackTimer = 500;
+                        }
+                    }
+
+                    // プラズマ弾：狙い撃ち（弾速4）。3秒待機→発射の繰り返し。
+                    // HP30%以下で2連射（0.5秒間隔）に変更。
+                    const s2 = this.invaders[0];
+                    if (s2 && s2.isVisible && s2.type && s2.type.isBoss && s2.typeName === 'inugami01') {
+                        const dtMs = (this.frameDeltaSec || 0) * 1000;
+                        const hpRate2 = (s2.maxHealth > 0) ? (s2.health / s2.maxHealth) : 1;
+                        const isLowHp = (hpRate2 <= 0.30);
+
+                        if (!Number.isFinite(s2.stage7PlasmaGateTimerMs)) s2.stage7PlasmaGateTimerMs = 3000;
+                        if (!Number.isFinite(s2.stage7PlasmaBurstTimerMs)) s2.stage7PlasmaBurstTimerMs = 0;
+                        if (!Number.isFinite(s2.stage7PlasmaBurstRemaining)) s2.stage7PlasmaBurstRemaining = 0;
+
+                        const spawnPlasma = () => {
+                            const cfg = s2.type;
+                            const playerCx = this.player.x + this.player.width / 2;
+                            const playerCy = this.player.y + this.player.height / 2;
+                            const sx = s2.x + s2.width / 2;
+                            const sy = s2.y + s2.height;
+                            const dx = playerCx - sx;
+                            const dy = playerCy - sy;
+                            const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                            const spd = 4;
+                            const vx = (dx / dist) * spd;
+                            const vy = (dy / dist) * spd;
+                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                            const r = (baseR * 2);
+                            this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', 'plazm.png', r));
+                        };
+
+                        if (s2.stage7PlasmaBurstRemaining > 0) {
+                            s2.stage7PlasmaBurstTimerMs -= dtMs;
+                            if (s2.stage7PlasmaBurstTimerMs <= 0) {
+                                spawnPlasma();
+                                s2.stage7PlasmaBurstRemaining -= 1;
+                                if (s2.stage7PlasmaBurstRemaining > 0) {
+                                    s2.stage7PlasmaBurstTimerMs = 500;
+                                } else {
+                                    s2.stage7PlasmaGateTimerMs = 3000;
+                                }
+                            }
+                        } else {
+                            s2.stage7PlasmaGateTimerMs -= dtMs;
+                            if (s2.stage7PlasmaGateTimerMs <= 0) {
+                                s2.stage7PlasmaBurstRemaining = isLowHp ? 2 : 1;
+                                s2.stage7PlasmaBurstTimerMs = 0;
+                            }
+                        }
+                    }
+                } else if (stageCfg.waveLabel === '8' && this.invaders.length > 0) {
+                    const s = this.invaders[0];
+                    if (s && s.isVisible && s.type && s.type.isBoss && s.typeName === 'inugami02') {
+                        const dtMs = (this.frameDeltaSec || 0) * 1000;
+                        const hpRate = (s.maxHealth > 0) ? (s.health / s.maxHealth) : 1;
+
+                        const phase = (hpRate > 0.70) ? 0 : ((hpRate > 0.50) ? 1 : ((hpRate > 0.30) ? 2 : 3));
+                        if (s.stage8Phase !== phase) {
+                            s.stage8Phase = phase;
+                            s.stage8PatternPhase = 0;
+                            s.stage8PatternTimerMs = 0;
+                            s.stage8BurstRemaining = 0;
+                            s.stage8OscBurstRemaining = 0;
+                            s.stage8P70ShotRemaining = 0;
+                            s.stage8P70TimerMs = 0;
+                            s.stage8TenguBurstRemaining = 0;
+                            s.stage8TenguTimerMs = 0;
+                            s.stage8TenguGateTimerMs = 0;
+                            s.stage8SpinActive = false;
+                            s.stage8SpinTimerMs = 0;
+                            s.stage8SpinStep = 0;
+                            s.stage8SpinWaitMs = 0;
+                        }
+
+                        // HP70%より上：
+                        // 3連射(vx=0,vy=2,300ms間隔) → 2秒待機 → 2-1横ブレ弾を2連射(300ms間隔) → 2秒待機 → 繰り返し
+                        if (phase === 0) {
+                            if (!Number.isFinite(s.stage8PatternPhase)) s.stage8PatternPhase = 0;
+                            if (!Number.isFinite(s.stage8PatternTimerMs)) s.stage8PatternTimerMs = 0;
+                            if (!Number.isFinite(s.stage8BurstRemaining)) s.stage8BurstRemaining = 0;
+                            if (!Number.isFinite(s.stage8OscBurstRemaining)) s.stage8OscBurstRemaining = 0;
+
+                            const cfg = s.type;
+                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                            const r = (baseR * 2);
+
+                            const sx = s.x + s.width / 2;
+                            const sy = s.y + s.height;
+
+                            const spawnDown = () => {
+                                this.invaderBullets.push(new Bullet(sx, sy, 2, cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            };
+                            const spawnOsc = () => {
+                                // 2-1の「横ブレ」弾と同じ設定
+                                const vy = 3;
+                                const vx = 0;
+                                const b = new Bullet(sx, sy, vy * 0.35, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r);
+                                b.oscillateX = true; b.baseVx = vx; b.oscAmp = 6.6; b.oscSpeed = 0.25;
+                                this.invaderBullets.push(b);
+                            };
+
+                            if (s.stage8BurstRemaining > 0) {
+                                s.stage8PatternTimerMs -= dtMs;
+                                if (s.stage8PatternTimerMs <= 0) {
+                                    spawnDown();
+                                    s.stage8BurstRemaining -= 1;
+                                    s.stage8PatternTimerMs = 300;
+                                }
+                                return;
+                            }
+                            if (s.stage8OscBurstRemaining > 0) {
+                                s.stage8PatternTimerMs -= dtMs;
+                                if (s.stage8PatternTimerMs <= 0) {
+                                    spawnOsc();
+                                    s.stage8OscBurstRemaining -= 1;
+                                    s.stage8PatternTimerMs = 300;
+                                }
+                                return;
+                            }
+
+                            s.stage8PatternTimerMs -= dtMs;
+                            if (s.stage8PatternTimerMs > 0) return;
+
+                            const phase = (s.stage8PatternPhase || 0) % 4;
+                            if (phase === 0) {
+                                s.stage8BurstRemaining = 3;
+                                s.stage8PatternTimerMs = 0;
+                            } else if (phase === 1) {
+                                s.stage8PatternTimerMs = 2000;
+                            } else if (phase === 2) {
+                                s.stage8OscBurstRemaining = 2;
+                                s.stage8PatternTimerMs = 0;
+                            } else {
+                                s.stage8PatternTimerMs = 2000;
+                            }
+                            s.stage8PatternPhase = phase + 1;
+                            return;
+                        }
+
+                        const cfg = s.type;
+                        const sx = s.x + s.width / 2;
+                        const sy = s.y + s.height;
+
+                        // HP70%以下：4-3の3way弾を3回→出現して3秒待機 の繰り返し
+                        if (phase === 1) {
+                            if (!Number.isFinite(s.stage8P70ShotRemaining)) s.stage8P70ShotRemaining = 0;
+                            if (!Number.isFinite(s.stage8P70TimerMs)) s.stage8P70TimerMs = 0;
+
+                            const spawnFan43 = () => {
+                                const count = 3;
+                                const spread = 1.5;
+                                const speed = 3;
+                                const centerAngle = Math.PI / 2;
+                                const startAngle = centerAngle - spread / 2;
+                                const stepA = (count === 1) ? 0 : (spread / (count - 1));
+                                const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                                const r = (baseR * 2);
+                                for (let i = 0; i < count; i++) {
+                                    const a = startAngle + stepA * i;
+                                    const vx = Math.cos(a) * speed;
+                                    const vy = Math.sin(a) * speed;
+                                    this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+                            };
+
+                            s.stage8P70TimerMs -= dtMs;
+                            if (s.stage8P70TimerMs > 0) return;
+
+                            if (s.stage8P70ShotRemaining <= 0) {
+                                s.stage8P70ShotRemaining = 3;
+                            }
+
+                            spawnFan43();
+                            s.stage8P70ShotRemaining -= 1;
+                            if (s.stage8P70ShotRemaining > 0) {
+                                s.stage8P70TimerMs = 600;
+                            } else {
+                                s.stage8P70TimerMs = 3000;
+                            }
+                            return;
+                        }
+
+                        // HP50%以下：tengu03の攻撃（狙い撃ち）
+                        if (phase === 2) {
+                            if (!Number.isFinite(s.stage8TenguGateTimerMs)) s.stage8TenguGateTimerMs = 0;
+                            if (!Number.isFinite(s.stage8TenguTimerMs)) s.stage8TenguTimerMs = 0;
+                            if (!Number.isFinite(s.stage8TenguBurstRemaining)) s.stage8TenguBurstRemaining = 0;
+
+                            const spawnTengu03Aimed = () => {
+                                const playerCx = this.player.x + this.player.width / 2;
+                                const playerCy = this.player.y + this.player.height / 2;
+                                const dx = playerCx - sx;
+                                const dy = playerCy - sy;
+                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                const spd = 3;
+                                const vx = (dx / dist) * spd;
+                                const vy = (dy / dist) * spd;
+                                const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                                const r = (baseR * 2);
+                                this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                            };
+
+                            if (s.stage8TenguBurstRemaining > 0) {
+                                s.stage8TenguTimerMs -= dtMs;
+                                if (s.stage8TenguTimerMs > 0) return;
+                                spawnTengu03Aimed();
+                                s.stage8TenguBurstRemaining -= 1;
+                                s.stage8TenguTimerMs = 600;
+                                if (s.stage8TenguBurstRemaining <= 0) {
+                                    s.stage8TenguGateTimerMs = 1600;
+                                }
+                                return;
+                            }
+
+                            s.stage8TenguGateTimerMs -= dtMs;
+                            if (s.stage8TenguGateTimerMs > 0) return;
+                            s.stage8TenguBurstRemaining = 3;
+                            s.stage8TenguTimerMs = 0;
+                            return;
+                        }
+
+                        // HP30%以下：inugami02_tamaを放射状に1回転発射→5秒待機→繰り返し
+                        if (phase === 3) {
+                            if (!Number.isFinite(s.stage8SpinWaitMs)) s.stage8SpinWaitMs = 0;
+                            if (!Number.isFinite(s.stage8SpinTimerMs)) s.stage8SpinTimerMs = 0;
+                            if (!Number.isFinite(s.stage8SpinStep)) s.stage8SpinStep = 0;
+                            if (!Number.isFinite(s.stage8SpinActive)) s.stage8SpinActive = false;
+
+                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
+                            const r = (baseR * 2);
+                            const img = 'inugami02_tama.png';
+
+                            if (s.stage8SpinWaitMs > 0) {
+                                s.stage8SpinWaitMs -= dtMs;
+                                return;
+                            }
+
+                            if (!s.stage8SpinActive) {
+                                s.stage8SpinActive = true;
+                                s.stage8SpinStep = 0;
+                                s.stage8SpinTimerMs = 0;
+                            }
+
+                            s.stage8SpinTimerMs -= dtMs;
+                            if (s.stage8SpinTimerMs > 0) return;
+
+                            const totalSteps = 20;
+                            const ringCount = 8;
+                            const speed = 3;
+                            const baseAngle = (s.stage8SpinStep / totalSteps) * (Math.PI * 2);
+                            for (let i = 0; i < ringCount; i++) {
+                                const a = baseAngle + (i * (Math.PI * 2 / ringCount));
+                                const vx = Math.cos(a) * speed;
+                                const vy = Math.sin(a) * speed;
+                                this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', img, r));
+                            }
+
+                            s.stage8SpinStep += 1;
+                            if (s.stage8SpinStep >= totalSteps) {
+                                s.stage8SpinActive = false;
+                                s.stage8SpinWaitMs = 5000;
+                            } else {
+                                s.stage8SpinTimerMs = 120;
+                            }
+                            return;
                         }
                     }
                 } else {
@@ -2235,13 +2547,13 @@ Presented by
                                     this.player.isReloading = true;
                                     setTimeout(() => { this.player.isReloading = false; }, 1000);
                                 }
-                                if (b.isExplosive) explosions.push({ x: b.x, y: b.y, damage: b.splashDamage }); else this.applyDamage(inv, b.damage);
+                                if (b.isExplosive) explosions.push({ x: b.x, y: b.y, damage: b.splashDamage, sourceWeaponType: b.sourceWeaponType }); else this.applyDamage(inv, b.damage);
                                 break;
                             }
                         }
                     }
                 });
-                explosions.forEach(e => { const br = 60; this.blasts.push(new BlastEffect(e.x, e.y, br)); for (let inv of this.invaders) { if (!inv.isVisible || inv.markedForDeletion) continue; const dx = (inv.x + inv.width / 2) - e.x, dy = (inv.y + inv.height / 2) - e.y; if (Math.sqrt(dx * dx + dy * dy) < br + inv.width / 2) this.applyDamage(inv, e.damage); } });
+                explosions.forEach(e => { const br = 60; this.blasts.push(new BlastEffect(e.x, e.y, br)); for (let inv of this.invaders) { if (!inv.isVisible || inv.markedForDeletion) continue; const dx = (inv.x + inv.width / 2) - e.x, dy = (inv.y + inv.height / 2) - e.y; if (Math.sqrt(dx * dx + dy * dy) < br + inv.width / 2) { const dmg = (e.sourceWeaponType === 'baku' && (inv.isMidBoss || (inv.type && inv.type.isBoss))) ? 2 : e.damage; this.applyDamage(inv, dmg); } } });
 
                 // 5-3ボス(oni03)接触ダメージ
                 if (stageCfg && stageCfg.waveLabel === '5-3') {
