@@ -163,7 +163,7 @@
 
         #high-score-board {
             position: absolute;
-            top: 90px;
+            top: 75px;
             width: 100%;
             text-align: center;
             font-size: 32px;
@@ -323,6 +323,17 @@
         #ending-screen {
             background: #000;
             cursor: pointer;
+            position: absolute;
+        }
+
+        #ending-tap-hint {
+            position: absolute;
+            left: 0;
+            bottom: 20px;
+            width: 100%;
+            margin-top: 0 !important;
+            text-align: center;
+            pointer-events: none;
         }
 
         #ending-image {
@@ -366,7 +377,8 @@
         }
 
         #ending-credits.scroll {
-            animation: endingCreditsScroll 35s linear forwards;
+            animation: endingCreditsScroll 70s linear forwards;
+            animation-delay: 1s;
         }
 
         @keyframes endingCreditsScroll {
@@ -375,7 +387,7 @@
             }
 
             100% {
-                transform: translateY(-120%);
+                transform: translateY(-100%);
             }
         }
 
@@ -577,8 +589,8 @@ Presented by
             { enemy: 'nuriyome', rows: 5, cols: 3, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', opening: 'OP04.png', waveLabel: '4-1' },
             { enemy: 'nuriyome02', rows: 5, cols: 3, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', waveLabel: '4-2' },
             { enemy: 'nuriyome03', isMidBoss: true, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', waveLabel: '4-3' },
-            { enemy: 'oni', rows: 4, cols: 3, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', opening: 'OP05.png', waveLabel: '5-1' },
-            { enemy: 'oni02', rows: 5, cols: 3, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-2' },
+            { enemy: 'oni', rows: 3, cols: 4, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', opening: 'OP05.png', waveLabel: '5-1' },
+            { enemy: 'oni02', rows: 3, cols: 5, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-2' },
             { enemy: 'oni03', isMidBoss: true, speed: 1.8, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-3' },
             { enemy: 'tengu', rows: 1, cols: 1, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', opening: 'OP06.png', waveLabel: '6-1', isMidBoss: true },
             { enemy: 'tengu', rows: 1, cols: 2, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', waveLabel: '6-2', isMidBoss: true },
@@ -753,6 +765,8 @@ Presented by
                 } else if (type === 'wakasa') {
                     this.image.src = 'wakasa.png';
                     this.speed = 0;
+                    this.hitboxScaleX = 1.8;
+                    this.hitboxScaleY = 1.8;
                 } else {
                     this.image.src = `item_${type}.png`;
                 }
@@ -937,7 +951,7 @@ Presented by
                     }
                 }
                 if (this.wakasaOptionActive && this.wakasaOptionImage && this.wakasaOptionImage.complete) {
-                    const ow = 50, oh = 50;
+                    const ow = this.width, oh = this.height;
                     const oxRaw = this.x - ow + 10;
                     const oyRaw = this.y + (this.height / 2) - (oh / 2);
                     const ox = Math.max(0, Math.min(CANVAS_LOGICAL_WIDTH - ow, oxRaw));
@@ -1113,7 +1127,16 @@ Presented by
                     this.y = 120 + Math.sin(this.angle) * 40;
                     return;
                 }
-                if (this.type.verticalMove) { this.y += (stageSpeed * 1.5) * this.vDir; if (this.y > 450) this.vDir = -1; else if (this.y < 50) this.vDir = 1; }
+                if (this.type.verticalMove) {
+                    const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
+                    const wl = stageCfg ? stageCfg.waveLabel : null;
+                    let yMax = 450;
+                    if (wl === '5-1' && this.typeName === 'oni') yMax = 350;
+                    else if (wl === '5-2' && this.typeName === 'oni02') yMax = 375;
+                    this.y += (stageSpeed * 1.5) * this.vDir;
+                    if (this.y > yMax) this.vDir = -1;
+                    else if (this.y < 50) this.vDir = 1;
+                }
                 else if (this.type.randomMove) {
                     if (this.typeName === 'tengu') {
                         const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
@@ -1260,8 +1283,10 @@ Presented by
                         const isEnraged32 = (stageCfg && stageCfg.waveLabel === '3-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
                         const isEnraged51 = (stageCfg && stageCfg.waveLabel === '5-1' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
                         const isEnraged52 = (stageCfg && stageCfg.waveLabel === '5-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 3);
+                        const isEnraged62Last = (stageCfg && stageCfg.waveLabel === '6-2' && this.game && this.game.visibleInvaderCount === 1 && (this.typeName === 'tengu' || this.typeName === 'tengu02' || this.typeName === 'tengu03'));
+                        const isEnraged63Last = (stageCfg && stageCfg.waveLabel === '6-3' && this.game && this.game.visibleInvaderCount === 1 && (this.typeName === 'tengu' || this.typeName === 'tengu02' || this.typeName === 'tengu03'));
                         const isPowerUpFx = (stageCfg && (stageCfg.waveLabel === '4-1' || stageCfg.waveLabel === '4-2') && this.type && this.type.canHide && this.game && this.game.aliveInvaderCount > 0 && this.game.aliveInvaderCount <= 3);
-                        const showEnrageFx = (((isEnraged12 || isEnraged21 || isEnraged22Hyoutan02 || isEnraged31 || isEnraged32 || isEnraged51 || isEnraged52) && !this.type.isBoss && !this.isMidBoss) || isPowerUpFx);
+                        const showEnrageFx = (((isEnraged12 || isEnraged21 || isEnraged22Hyoutan02 || isEnraged31 || isEnraged32 || isEnraged51 || isEnraged52) && !this.type.isBoss && !this.isMidBoss) || isPowerUpFx || isEnraged62Last || isEnraged63Last);
                         if (boss7Enraged) {
                             ctx.save();
                             ctx.filter = 'brightness(1.1) saturate(2.0) hue-rotate(330deg)';
@@ -1465,6 +1490,19 @@ Presented by
                 const btnLeft = document.getElementById('btn-left');
                 const btnRight = document.getElementById('btn-right');
 
+                const fitOneLine = (el, maxPx = 32, minPx = 18) => {
+                    if (!el) return;
+                    el.style.whiteSpace = 'nowrap';
+                    let size = maxPx;
+                    el.style.fontSize = size + 'px';
+                    for (let i = 0; i < 60; i++) {
+                        if (el.scrollWidth <= el.clientWidth) break;
+                        size -= 0.5;
+                        if (size < minPx) { size = minPx; break; }
+                        el.style.fontSize = size + 'px';
+                    }
+                };
+
                 const tl = (b, key) => {
                     if (!b) return;
                     b.ontouchstart = (e) => { e.preventDefault(); if (!this.input.includes(key)) this.input.push(key); };
@@ -1475,6 +1513,8 @@ Presented by
                 this.applyMoveControls = () => {
                     if (btnLeft) btnLeft.innerText = '←';
                     if (btnRight) btnRight.innerText = '→';
+                    if (btnRight) btnRight.style.fontSize = '';
+                    if (btnRight) btnRight.style.whiteSpace = '';
                     tl(btnLeft, 'ArrowLeft');
                     tl(btnRight, 'ArrowRight');
                 };
@@ -1498,6 +1538,7 @@ Presented by
                     }
                     if (btnRight && secretScreen) {
                         btnRight.innerText = 'シークレット';
+                        requestAnimationFrame(() => fitOneLine(btnRight, 32, 18));
                         const openSecret = () => {
                             if (this.gameStartedInitiated) return;
                             this.ui.startScreen.classList.add('hidden');
@@ -1580,6 +1621,8 @@ Presented by
 
             start() {
                 this.gameStartedInitiated = true; this.safePlay(this.startSound); this.ui.startScreen.classList.add('hidden'); this.ui.highScoreBoard.classList.add('hidden');
+                const secretScreen = document.getElementById('secret-screen');
+                if (secretScreen) secretScreen.classList.add('hidden');
                 this.stopTitleBGM();
                 if (this.applyMoveControls) this.applyMoveControls();
                 this.score = 0; this.loadStage(0);
@@ -1603,6 +1646,8 @@ Presented by
                     this.hiddenItemFlash = 0;
                     this.currentMajorStage = majorStageNum;
                     this.hiddenItemImage.src = `secret${String(majorStageNum).padStart(2, '0')}.png`;
+                    this.player.x = CANVAS_LOGICAL_WIDTH / 2 - this.player.width / 2;
+                    this.player.y = CANVAS_LOGICAL_HEIGHT - this.player.height - 20;
                 }
                 this.hiddenItemPos = HIDDEN_ITEM_POSITIONS[majorStageNum - 1];
 
@@ -1688,7 +1733,16 @@ Presented by
                         }
                     } else {
                         const spacing = (config.waveLabel === '5-1') ? 78 : 60, startX = (CANVAS_LOGICAL_WIDTH - (cols * spacing)) / 2 + spacing / 2 - 25;
-                        for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) { this.invaders.push(new Invader(startX + c * spacing, 80 + r * spacing, enemy, this)); } }
+                        for (let r = 0; r < rows; r++) {
+                            for (let c = 0; c < cols; c++) {
+                                const inv = new Invader(startX + c * spacing, 80 + r * spacing, enemy, this);
+                                if (config.waveLabel === '5-1' && enemy === 'oni') {
+                                    inv.health = 2;
+                                    inv.maxHealth = 2;
+                                }
+                                this.invaders.push(inv);
+                            }
+                        }
                     }
                 }
             }
@@ -2025,7 +2079,7 @@ Presented by
                             const playerCx = this.player.x + this.player.width / 2;
                             const playerCy = this.player.y + this.player.height / 2;
                             const sx = s2.x + s2.width / 2;
-                            const sy = s2.y + s2.height;
+                            const sy = s2.y + (s2.height * 0.6);
                             const dx = playerCx - sx;
                             const dy = playerCy - sy;
                             const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
@@ -2034,7 +2088,12 @@ Presented by
                             const vy = (dy / dist) * spd;
                             const baseR = ((cfg.bulletRadius || 8) * 1.5);
                             const r = (baseR * 2);
-                            this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', 'plazm.png', r));
+                            const b = new Bullet(sx, sy, 0, cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', 'plazm.png', r);
+                            b.preDelayMs = 500;
+                            b.preDelayBlinkPeriodMs = 120;
+                            b.postDelayVy = vy;
+                            b.postDelayVx = vx;
+                            this.invaderBullets.push(b);
                         };
 
                         if (s2.stage7PlasmaBurstRemaining > 0) {
@@ -2100,7 +2159,7 @@ Presented by
 
                                 const step = (s.stage8P100Step || 0) % 6;
                                 if (step === 0 || step === 1 || step === 3 || step === 4) {
-                                    this.invaderBullets.push(new Bullet(sx, sy, Math.abs(vyBase), cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    this.invaderBullets.push(new Bullet(sx, sy, Math.abs(vyBase), cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', 'hane.png', r));
                                 } else if (step === 2) {
                                     const count = 3;
                                     const speed = 3;
@@ -2112,7 +2171,7 @@ Presented by
                                         const a = startAngle + stepA * i;
                                         const nvx = Math.cos(a) * speed;
                                         const nvy = Math.sin(a) * speed;
-                                        this.invaderBullets.push(new Bullet(sx, sy, nvy, cfg.bulletColor || COLORS.CYAN, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                        this.invaderBullets.push(new Bullet(sx, sy, nvy, cfg.bulletColor || COLORS.CYAN, nvx, true, cfg.bulletShape || 'circle', 'hane02.png', r));
                                     }
                                 } else if (step === 5) {
                                     const playerCx = this.player.x + this.player.width / 2;
@@ -2123,7 +2182,7 @@ Presented by
                                     const spd = 3;
                                     const avx = (dx / dist) * spd;
                                     const avy = (dy / dist) * spd;
-                                    this.invaderBullets.push(new Bullet(sx, sy, avy, cfg.bulletColor || COLORS.CYAN, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    this.invaderBullets.push(new Bullet(sx, sy, avy, cfg.bulletColor || COLORS.CYAN, avx, true, cfg.bulletShape || 'circle', 'hane03.png', r));
                                 }
 
                                 const intervals = [1000, 500, 1000, 1000, 500, 1000];
@@ -2150,7 +2209,7 @@ Presented by
                                     const a = startAngle + stepA * i;
                                     const vx = Math.cos(a) * speed;
                                     const vy = Math.sin(a) * speed;
-                                    this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', 'iwa.png', r));
                                 }
                             };
 
@@ -2188,7 +2247,7 @@ Presented by
                                 const vy = (dy / dist) * spd;
                                 const baseR = ((cfg.bulletRadius || 8) * 1.5);
                                 const r = (baseR * 2);
-                                this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', 'ankoku.png', r));
                             };
 
                             if (s.stage8TenguBurstRemaining > 0) {
@@ -2219,7 +2278,7 @@ Presented by
 
                             const baseR = ((cfg.bulletRadius || 8) * 1.5);
                             const r = (baseR * 2);
-                            const img = 'inugami02_tama.png';
+                            const img = 'syuriken.png';
 
                             if (s.stage8SpinWaitMs > 0) {
                                 s.stage8SpinWaitMs -= dtMs;
@@ -2250,6 +2309,10 @@ Presented by
                             if (!s || !s.isVisible) return;
                             if (!(s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03')) return;
 
+                            const isStage6LastPowered = (stageCfg && (stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && this.visibleInvaderCount === 1);
+                            const stage6FireMul = isStage6LastPowered ? 2 : 1;
+                            const stage6SpeedMul = isStage6LastPowered ? 1.5 : 1;
+
                             const cfg = s.type;
                             const baseR = ((cfg.bulletRadius || 8) * 1.5);
                             const r = (s.isMidBoss || cfg.isBoss) ? (baseR * 2) : baseR;
@@ -2262,18 +2325,18 @@ Presented by
                                 s.stage6BurstTimerMs -= dtMs;
                                 if (s.stage6BurstTimerMs <= 0) {
                                     if (s.typeName === 'tengu') {
-                                        this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, 2, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                        this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, 2 * stage6SpeedMul, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                                     } else if (s.typeName === 'tengu03') {
                                         const dx = playerCx - (s.x + s.width / 2);
                                         const dy = playerCy - (s.y + s.height);
                                         const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                        const spd = 3;
+                                        const spd = 3 * stage6SpeedMul;
                                         const vx = (dx / dist) * spd;
                                         const vy = (dy / dist) * spd;
                                         this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                                     }
                                     s.stage6BurstRemaining -= 1;
-                                    s.stage6BurstTimerMs = (s.typeName === 'tengu') ? 300 : 600;
+                                    s.stage6BurstTimerMs = ((s.typeName === 'tengu') ? 300 : 600) / stage6FireMul;
                                 }
                                 return;
                             }
@@ -2281,12 +2344,12 @@ Presented by
                             const gateInterval = (s.typeName === 'tengu') ? 1000 : (s.typeName === 'tengu02' ? 1300 : 1600);
                             s.stage6GateTimerMs -= dtMs;
                             if (s.stage6GateTimerMs > 0) return;
-                            s.stage6GateTimerMs = gateInterval;
+                            s.stage6GateTimerMs = gateInterval / stage6FireMul;
 
                             if (Math.random() >= 0.5) return;
 
                             if (s.typeName === 'tengu02') {
-                                const spd = 2;
+                                const spd = 2 * stage6SpeedMul;
                                 const dx = playerCx - (s.x + s.width / 2);
                                 const dy = playerCy - (s.y + s.height);
                                 const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
@@ -2472,12 +2535,14 @@ Presented by
                         this.gameOver = true;
                         if (this.bgm) this.bgm.pause();
                         this.safePlay(this.clearSound); // 1. ステージクリアSE再生
+                        this.ui.stageClear.classList.remove('hidden');
+                        this.ui.stageClear.classList.remove('stage-clear-tappable');
+                        this.ui.stageClear.onclick = null;
                         this.player.setWinPose(true);
                         const bonus = Math.ceil(this.stageTime) * 100;
                         this.score += bonus;
                         this.ui.score.innerText = this.score;
                         this.ui.stageClear.innerText = `ステージクリア\nボーナス +${bonus}`;
-                        this.ui.stageClear.classList.remove('hidden');
 
                         // 指定フローの実行
                         setTimeout(() => {
@@ -2486,20 +2551,6 @@ Presented by
                             this.updateLivesUI();
 
                             setTimeout(() => {
-                                const advance = () => {
-                                    this.ui.stageClear.classList.remove('stage-clear-tappable');
-                                    this.ui.stageClear.onclick = null;
-                                    this.ui.stageClear.classList.add('hidden');
-
-                                    // 指示：8面クリア時はエンディングへ、それ以外は次へ
-                                    if (this.currentMajorStage === 8) {
-                                        this.showEnding();
-                                    } else {
-                                        this.currentStage++;
-                                        this.loadStage(this.currentStage);
-                                    }
-                                };
-
                                 let bonusImg = null;
                                 if (!this.bonusLife2Granted && this.score >= 60000) {
                                     bonusImg = 'bonus02.png';
@@ -2518,12 +2569,34 @@ Presented by
                                     this.safePlay(this.bonusSound);
                                     this.ui.stageClear.innerHTML = `<img src="${bonusImg}" alt="bonus">`;
                                     this.ui.stageClear.classList.add('stage-clear-tappable');
-                                    this.ui.stageClear.onclick = advance;
+                                    this.ui.stageClear.onclick = () => {
+                                        this.ui.stageClear.classList.remove('stage-clear-tappable');
+                                        this.ui.stageClear.onclick = null;
+                                        this.ui.stageClear.classList.add('hidden');
+
+                                        // 指示：8面クリア時はエンディングへ、それ以外は次へ
+                                        if (this.currentMajorStage === 8) {
+                                            this.showEnding();
+                                        } else {
+                                            this.currentStage++;
+                                            this.loadStage(this.currentStage);
+                                        }
+                                    };
                                 } else {
-                                    advance();
+                                    this.ui.stageClear.classList.remove('stage-clear-tappable');
+                                    this.ui.stageClear.onclick = null;
+                                    this.ui.stageClear.classList.add('hidden');
+
+                                    // 指示：8面クリア時はエンディングへ、それ以外は次へ
+                                    if (this.currentMajorStage === 8) {
+                                        this.showEnding();
+                                    } else {
+                                        this.currentStage++;
+                                        this.loadStage(this.currentStage);
+                                    }
                                 }
-                            }, 1500);
-                        }, 1500);
+                            }, 2000);
+                        }, 2000);
 
                     } else {
                         // 通常ウェーブ移行（1-1から1-2など）は弾の残存を無視して即座に進む
@@ -2555,12 +2628,17 @@ Presented by
                 this.particles = [];
                 if (this.bgm) { try { this.bgm.pause(); } catch (e) { } }
                 this.playBGM('ED_song.mp3');
-                this.ui.uiLayer.classList.add('hidden');
-                this.ui.logo.classList.add('hidden');
-                this.ui.endFinalScore.innerText = this.score;
-                this.ui.endingScreen.classList.remove('hidden');
+                if (this.ui && this.ui.stageClear) {
+                    this.ui.stageClear.classList.add('hidden');
+                    this.ui.stageClear.classList.remove('stage-clear-tappable');
+                    this.ui.stageClear.onclick = null;
+                }
+                if (this.ui && this.ui.uiLayer) this.ui.uiLayer.classList.add('hidden');
+                if (this.ui && this.ui.logo) this.ui.logo.classList.add('hidden');
+                if (this.ui && this.ui.endFinalScore) this.ui.endFinalScore.innerText = this.score;
+                if (this.ui && this.ui.endingScreen) this.ui.endingScreen.classList.remove('hidden');
                 this.endingTapEnabled = false;
-                if (this.ui.endingTapHint) this.ui.endingTapHint.classList.add('hidden');
+                if (this.ui && this.ui.endingTapHint) this.ui.endingTapHint.classList.add('hidden');
                 const ec = document.getElementById('ending-credits');
                 if (ec) {
                     requestAnimationFrame(() => {
@@ -2580,6 +2658,15 @@ Presented by
                 const pCx = this.player.x + this.player.width / 2;
                 const pCy = this.player.y + this.player.height / 2;
                 const pHit = { x: pCx - 13, y: pCy - 20, width: 26, height: 40 };
+                let optHit = null;
+                if (this.player.wakasaOptionActive) {
+                    const ow = this.player.width, oh = this.player.height;
+                    const oxRaw = this.player.x - ow + 10;
+                    const oyRaw = this.player.y + (this.player.height / 2) - (oh / 2);
+                    const ox = Math.max(0, Math.min(CANVAS_LOGICAL_WIDTH - ow, oxRaw));
+                    const oy = Math.max(0, Math.min(CANVAS_LOGICAL_HEIGHT - oh, oyRaw));
+                    optHit = { x: ox, y: oy, width: ow, height: oh };
+                }
                 const explosions = [];
                 const stageCfg = STAGE_CONFIG[this.currentStage];
                 this.player.bullets.forEach(b => {
@@ -2733,6 +2820,10 @@ Presented by
                 });
 
                 this.invaderBullets.forEach(b => {
+                    if (!b.markedForDeletion && optHit && this.rectHit(b, optHit)) {
+                        b.markedForDeletion = true;
+                        return;
+                    }
                     if (!b.markedForDeletion && !this.player.isInvincible && this.rectHit(b, pHit)) {
                         b.markedForDeletion = true;
                         if (!DEBUG_INVINCIBLE) {
