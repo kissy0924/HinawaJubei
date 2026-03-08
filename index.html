@@ -350,9 +350,19 @@
             text-align: center;
             white-space: pre-line;
             transform: translateY(100%);
-            font-size: 18px;
+            font-size: 20px;
             line-height: 1.5;
             color: var(--text-color);
+        }
+
+        #ending-credits .credit-heading {
+            color: var(--neon-yellow);
+            font-size: 18px;
+        }
+
+        #ending-credits .credit-pink {
+            color: var(--neon-magenta);
+            font-size: 18px;
         }
 
         #ending-credits.scroll {
@@ -463,29 +473,34 @@
                 <p style="color:var(--neon-yellow);font-size:28px;margin-bottom:10px;">祝！種子島妖怪大決戦 制覇</p>
                 <p style="color:var(--text-color);font-size:24px;">最終スコア: <span id="end-final-score">0</span></p>
                 <div id="ending-credits-wrap">
-                    <div id="ending-credits">Game Design
+                    <div id="ending-credits"><span class="credit-heading">Game Design</span>
 木下勝
 
-AI Assisted Development
+<span class="credit-heading">AI Assisted Development</span>
 生成AI
 
-Sound & Music
+<span class="credit-heading">Sound & Music</span>
 スズキサトシ
 ポケットサウンド
 (https://pocket-se.info/)
 seadenden
 (https://seadenden-8bit.com)
 
-Voice Cooperation
+<span class="credit-heading">Voice Cooperation</span>
 TAC（種子島アクションクラブ）
 
-Special Thanks /
-Production Cooperation
+エンディングテーマ
+「恋する たねPay」
+<span class="credit-pink">歌・作曲：</span>suno AI 
+<span class="credit-pink">作詞：</span>木下勝
+
+<span class="credit-heading">Special Thanks /</span>
+<span class="credit-heading">Production Cooperation</span>
 西之表市役所 経済観光課 商工政策係
 ※火縄銃兵衛・わかさ姫は西之表市のマスコットキャラクターです
 
 Presented by
-種子島ゲームス</div>
+種子島ゲーム</div>
                 </div>
                 <p id="ending-tap-hint" class="blink hidden" style="color:var(--neon-cyan);font-size:32px;margin-top:30px;">タップでタイトルへ</p>
             </div>
@@ -526,7 +541,7 @@ Presented by
         const ENEMY_TYPES = {
             kapa: { image: 'kapa.png', maxWidth: 50, health: 1, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
             kapa02: { image: 'kapa02.png', maxWidth: 50, health: 1, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
-            kapa03: { image: 'kapa03.png', maxWidth: 50, health: 1, midBossHealth: 10, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
+            kapa03: { image: 'kapa03.png', maxWidth: 50, health: 1, midBossHealth: 7, color: COLORS.MAGENTA, bulletShape: 'circle', bulletColor: COLORS.CYAN, bulletImage: 'kapa_tama.png' },
             hyoutan: { image: 'hyoutan.png', maxWidth: 50, health: 1, color: COLORS.YELLOW, splitInto: 'miniHyoutan', bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
             hyoutan_nosplit: { image: 'hyoutan.png', maxWidth: 50, health: 1, color: COLORS.YELLOW, bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
             hyoutan02: { image: 'hyoutan02.png', maxWidth: 50, health: 1, color: COLORS.YELLOW, splitInto: 'miniHyoutan', bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
@@ -626,13 +641,20 @@ Presented by
         class Bullet {
             constructor(x, y, vy, color, vx = 0, isEnemy = false, shape = 'circle', imgSource = null, radius = 5, isExplosive = false, isLaser = false, damage = 1, drawMaxWidth = null, splashDamage = null) {
                 this.x = x; this.y = y; this.vy = vy; this.vx = vx;
+                if (imgSource === 'plazm.png') radius = radius * 2;
                 this.radius = radius; this.width = radius * 2; this.height = radius * 2;
                 this.centerBased = true;
+                this.hitboxScaleX = 1;
+                this.hitboxScaleY = 1;
                 this.color = color; this.markedForDeletion = false; this.isExplosive = isExplosive;
                 this.isEnemy = isEnemy; this.shape = shape; this.isLaser = isLaser; this.damage = damage;
                 this.drawMaxWidth = drawMaxWidth;
                 this.splashDamage = (Number.isFinite(splashDamage) ? splashDamage : damage);
                 this.bulletImg = null; if (imgSource) { if (!BULLET_IMAGE_CACHE[imgSource]) { const img = new Image(); img.src = imgSource; BULLET_IMAGE_CACHE[imgSource] = img; } this.bulletImg = BULLET_IMAGE_CACHE[imgSource]; }
+                if (imgSource === 'hane.png' || imgSource === 'hane02.png' || imgSource === 'hane03.png') {
+                    this.hitboxScaleX = 0.7;
+                    this.hitboxScaleY = 0.7;
+                }
                 this.oscillateX = false; this.oscPhase = 0; this.oscSpeed = 0; this.oscAmp = 0; this.baseVx = vx;
                 this.preDelayMs = 0;
                 this.preDelayBlinkPeriodMs = 200;
@@ -758,7 +780,7 @@ Presented by
             constructor(game) {
                 this.game = game; this.width = 50; this.height = 77;
                 this.x = CANVAS_LOGICAL_WIDTH / 2 - this.width / 2; this.y = CANVAS_LOGICAL_HEIGHT - this.height - 20;
-                this.speed = 5; this.bullets = []; this.isReloading = false;
+                this.speed = 4; this.bullets = []; this.isReloading = false;
                 this.imageNormal = new Image(); this.imageNormal.src = 'player.png';
                 this.imageWin = new Image(); this.imageWin.src = 'player_02.png';
                 this.image = this.imageNormal;
@@ -796,13 +818,21 @@ Presented by
                     this.isReloading = true;
                     const cx = this.x + this.width / 2;
                     const cy = this.y;
-                    const offset = 10;
-                    const b1 = new Bullet(cx - offset, cy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1);
-                    const b2 = new Bullet(cx + offset, cy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1);
-                    b1.sourceWeaponType = 'totu';
-                    b2.sourceWeaponType = 'totu';
-                    this.bullets.push(b1);
-                    this.bullets.push(b2);
+
+                    const ow = 50, oh = 50;
+                    const oxRaw = this.x - ow + 10;
+                    const oyRaw = this.y + (this.height / 2) - (oh / 2);
+                    const ox = Math.max(0, Math.min(CANVAS_LOGICAL_WIDTH - ow, oxRaw));
+                    const oy = Math.max(0, Math.min(CANVAS_LOGICAL_HEIGHT - oh, oyRaw));
+                    const optCx = ox + ow / 2;
+                    const optCy = oy + oh / 2;
+
+                    const bPlayer = new Bullet(cx, cy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1);
+                    const bOpt = new Bullet(optCx, optCy, -7.5, COLORS.CYAN, 0, false, 'circle', 'tama_shin.png', 12.5, false, true, 1);
+                    bPlayer.sourceWeaponType = 'totu';
+                    bOpt.sourceWeaponType = 'totu';
+                    this.bullets.push(bPlayer);
+                    this.bullets.push(bOpt);
                     this.game.safePlay(this.game.shotSound);
                     setTimeout(() => { this.isReloading = false; }, 1200);
                     return;
@@ -968,8 +998,11 @@ Presented by
             update(velocity, deltaTime, stageSpeed) {
                 if (this.typeName === 'tinoishi') return;
                 if (this.type.canHide) {
-                    const isPowerUp = (this.game && this.game.player && this.game.player.weaponIdx === 4);
                     const isPowerUp41 = (this.game && Number.isFinite(this.game.currentStage) && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-1');
+                    const isPowerUp42 = (this.game && Number.isFinite(this.game.currentStage) && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-2');
+                    const isPowerUpFx41 = (isPowerUp41 && this.game && this.game.aliveInvaderCount > 0 && this.game.aliveInvaderCount <= 3);
+                    const isPowerUpFx42 = (isPowerUp42 && this.game && this.game.aliveInvaderCount > 0 && this.game.aliveInvaderCount <= 3);
+                    const isPowerUp = (isPowerUpFx41 || isPowerUpFx42);
 
                     this.stateTimer += deltaTime;
                     if (this.isVisible) {
@@ -983,13 +1016,7 @@ Presented by
                                 if (isPowerUp41) {
                                     this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 4, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                                 } else {
-                                    const dx = (this.game.player.x + this.game.player.width / 2) - (this.x + this.width / 2);
-                                    const dy = (this.game.player.y + this.game.player.height / 2) - (this.y + this.height);
-                                    const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                    const spd = 3;
-                                    const avx = (dx / dist) * spd;
-                                    const avy = (dy / dist) * spd;
-                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, avy, cfg.bulletColor || COLORS.YELLOW, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 4, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                                 }
                             }
                             if (this.stateTimer > 2000 && !this.powerUpSecondShotDone) {
@@ -1021,11 +1048,12 @@ Presented by
                                     const cfg = this.type;
                                     const baseR = ((cfg.bulletRadius || 8) * 1.5);
                                     const r = baseR;
-                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 4, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    this.game.invaderBullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 2, cfg.bulletColor || COLORS.YELLOW, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                                 }
                             }
                         }
-                        if (this.stateTimer > 1500) { this.isVisible = false; this.stateTimer = 0; this.nextInvisibleTime = 1000 + Math.random() * 1000; }
+                        const visibleMs = (isPowerUpFx41 || isPowerUpFx42) ? 5000 : 1500;
+                        if (this.stateTimer > visibleMs) { this.isVisible = false; this.stateTimer = 0; this.nextInvisibleTime = 1000 + Math.random() * 1000; }
                     }
                     else {
                         if (this.stateTimer > this.nextInvisibleTime) {
@@ -1036,10 +1064,8 @@ Presented by
                             this.preHideAttackDone = false;
                             if (this.game && STAGE_CONFIG[this.game.currentStage] && STAGE_CONFIG[this.game.currentStage].waveLabel === '4-1' && this.typeName === 'nuriyome') this.spawnAttackResolved = false;
 
-                            if (isPowerUp) {
-                                this.powerUpFirstShotDone = false;
-                                this.powerUpSecondShotDone = false;
-                            }
+                            this.powerUpFirstShotDone = false;
+                            this.powerUpSecondShotDone = false;
                         }
                     }
                     return;
@@ -1187,6 +1213,23 @@ Presented by
                         }
                         const dy = this.laneTargetY - this.y;
                         if (Math.abs(dy) > 0.5) this.y += Math.sign(dy) * 0.6;
+                    }
+
+                    if (wl === '3-3' && this.isMidBoss && this.typeName === 'hitotume03') {
+                        if (!Number.isFinite(this.hitotume03StopMs)) this.hitotume03StopMs = 0;
+                        if (!Number.isFinite(this.hitotume03NextStopIn)) this.hitotume03NextStopIn = 1500 + Math.random() * 2000;
+
+                        if (this.hitotume03StopMs > 0) {
+                            this.hitotume03StopMs -= deltaTime;
+                            velocity = 0;
+                        } else {
+                            this.hitotume03NextStopIn -= deltaTime;
+                            if (this.hitotume03NextStopIn <= 0 && Math.abs(velocity) > 0.001) {
+                                this.hitotume03StopMs = 1000;
+                                this.hitotume03NextStopIn = 1500 + Math.random() * 2000;
+                                velocity = 0;
+                            }
+                        }
                     }
                     this.x += velocity;
                 }
@@ -1419,16 +1462,69 @@ Presented by
                 const startScreen = document.getElementById('start-screen');
                 const titleAudioMsg = document.getElementById('title-audio-msg');
                 const titleBtns = document.querySelector('#start-screen .title-btns');
+                const btnLeft = document.getElementById('btn-left');
+                const btnRight = document.getElementById('btn-right');
+
+                const tl = (b, key) => {
+                    if (!b) return;
+                    b.ontouchstart = (e) => { e.preventDefault(); if (!this.input.includes(key)) this.input.push(key); };
+                    b.ontouchend = (e) => { e.preventDefault(); const i = this.input.indexOf(key); if (i > -1) this.input.splice(i, 1); };
+                    b.onclick = null;
+                };
+
+                this.applyMoveControls = () => {
+                    if (btnLeft) btnLeft.innerText = '←';
+                    if (btnRight) btnRight.innerText = '→';
+                    tl(btnLeft, 'ArrowLeft');
+                    tl(btnRight, 'ArrowRight');
+                };
+
+                this.applyTitleControls = () => {
+                    if (btnLeft) {
+                        btnLeft.innerText = 'スタート';
+                        btnLeft.ontouchstart = (e) => {
+                            e.preventDefault();
+                            if (this.gameStartedInitiated) return;
+                            this.ensureAudioInitialized();
+                            if (this.gameOver && !this.gameStartedInitiated) this.start();
+                        };
+                        btnLeft.ontouchend = (e) => { e.preventDefault(); };
+                        btnLeft.onclick = (e) => {
+                            e.preventDefault();
+                            if (this.gameStartedInitiated) return;
+                            this.ensureAudioInitialized();
+                            if (this.gameOver && !this.gameStartedInitiated) this.start();
+                        };
+                    }
+                    if (btnRight && secretScreen) {
+                        btnRight.innerText = 'シークレット';
+                        const openSecret = () => {
+                            if (this.gameStartedInitiated) return;
+                            this.ui.startScreen.classList.add('hidden');
+                            this.ui.highScoreBoard.classList.add('hidden');
+                            this.updateSecretScreen();
+                            secretScreen.classList.remove('hidden');
+                        };
+                        btnRight.ontouchstart = (e) => { e.preventDefault(); openSecret(); };
+                        btnRight.ontouchend = (e) => { e.preventDefault(); };
+                        btnRight.onclick = (e) => { e.preventDefault(); openSecret(); };
+                    }
+                };
 
                 if (startScreen && titleBtns && titleAudioMsg) {
                     startScreen.onclick = () => {
                         if (this.gameStartedInitiated) return;
                         this.ensureAudioInitialized();
-                        this.playTitleBGM();
-                        startScreen.classList.add('title-visible');
-                        if (this.ui.highScoreBoard) this.ui.highScoreBoard.classList.remove('hidden');
-                        titleAudioMsg.classList.add('hidden');
-                        titleBtns.classList.remove('hidden');
+                        if (!startScreen.classList.contains('title-visible')) {
+                            this.playTitleBGM();
+                            startScreen.classList.add('title-visible');
+                            if (this.ui.highScoreBoard) this.ui.highScoreBoard.classList.remove('hidden');
+                            titleAudioMsg.classList.add('hidden');
+                            titleBtns.classList.add('hidden');
+                            this.applyTitleControls();
+                        } else {
+                            if (this.gameOver && !this.gameStartedInitiated) this.start();
+                        }
                     };
                 }
                 if (btnStart) {
@@ -1471,20 +1567,21 @@ Presented by
                     if (this.ui.logo) this.ui.logo.classList.add('hidden');
                     if (this.ui.startScreen) {
                         this.ui.startScreen.classList.remove('hidden');
-                        if (titleBtns) titleBtns.classList.remove('hidden');
+                        if (titleBtns) titleBtns.classList.add('hidden');
                         this.playTitleBGM();
+                        if (this.applyTitleControls) this.applyTitleControls();
                     }
                 };
 
                 this.ui.endingScreen.onclick = () => { if (this.endingTapEnabled) location.reload(); };
                 this.ui.weaponDisplay.onclick = () => this.player.switchWeapon();
-                const tl = (id, key) => { const b = document.getElementById(id); if (!b) return; b.ontouchstart = (e) => { e.preventDefault(); if (!this.input.includes(key)) this.input.push(key); }; b.ontouchend = (e) => { e.preventDefault(); const i = this.input.indexOf(key); if (i > -1) this.input.splice(i, 1); }; };
-                tl('btn-left', 'ArrowLeft'); tl('btn-right', 'ArrowRight');
+                this.applyMoveControls();
             }
 
             start() {
                 this.gameStartedInitiated = true; this.safePlay(this.startSound); this.ui.startScreen.classList.add('hidden'); this.ui.highScoreBoard.classList.add('hidden');
                 this.stopTitleBGM();
+                if (this.applyMoveControls) this.applyMoveControls();
                 this.score = 0; this.loadStage(0);
             }
             loadStage(idx, preserveSpawnedObjects = false) {
@@ -1797,31 +1894,30 @@ Presented by
 
                             const step = (this.midBossAttackStep || 0);
 
+                            if (!Number.isFinite(s.stage43Repeat)) s.stage43Repeat = 0;
+
                             if (step === 0) {
-                                s.isVisible = true;
-                                appearCenter();
-                                this.midBossAttackStep = 100;
-                                this.midBossAttackTimer = 0;
-                            } else if (step === 100) {
-                                s.isVisible = false;
-                                teleportRandom();
                                 this.midBossAttackStep = 1;
                                 this.midBossAttackTimer = 0;
                             } else if (step === 1) {
                                 s.isVisible = true;
-                                spawnFan(3, 1.5, 3);
+                                appearCenter();
                                 this.midBossAttackStep = 2;
-                                this.midBossAttackTimer = 500;
+                                this.midBossAttackTimer = 3000;
                             } else if (step === 2) {
                                 s.isVisible = false;
                                 teleportRandom();
+                                s.stage43Repeat = 0;
                                 this.midBossAttackStep = 3;
                                 this.midBossAttackTimer = 0;
                             } else if (step === 3) {
                                 s.isVisible = true;
+                                this.midBossAttackStep = 33;
+                                this.midBossAttackTimer = 500;
+                            } else if (step === 33) {
                                 spawnFan(3, 1.5, 3);
                                 this.midBossAttackStep = 4;
-                                this.midBossAttackTimer = 500;
+                                this.midBossAttackTimer = 0;
                             } else if (step === 4) {
                                 s.isVisible = false;
                                 teleportRandom();
@@ -1829,21 +1925,28 @@ Presented by
                                 this.midBossAttackTimer = 0;
                             } else if (step === 5) {
                                 s.isVisible = true;
+                                this.midBossAttackStep = 55;
+                                this.midBossAttackTimer = 1000;
+                            } else if (step === 55) {
                                 spawnFan(3, 1.5, 3);
                                 this.midBossAttackStep = 6;
-                                this.midBossAttackTimer = 500;
+                                this.midBossAttackTimer = 0;
                             } else if (step === 6) {
                                 s.isVisible = false;
                                 teleportRandom();
-                                this.midBossAttackStep = 7;
+                                if (s.stage43Repeat < 1) {
+                                    s.stage43Repeat += 1;
+                                    this.midBossAttackStep = 5;
+                                } else {
+                                    this.midBossAttackStep = 7;
+                                }
                                 this.midBossAttackTimer = 0;
                             } else if (step === 7) {
                                 s.isVisible = true;
-                                appearCenter();
-                                this.midBossAttackStep = 100;
-                                this.midBossAttackTimer = 3000;
+                                this.midBossAttackStep = 2;
+                                this.midBossAttackTimer = 5000;
                             } else {
-                                this.midBossAttackStep = 0;
+                                this.midBossAttackStep = 1;
                                 this.midBossAttackTimer = 0;
                             }
                         } else {
@@ -1857,10 +1960,10 @@ Presented by
                         if (s && s.isVisible && s.type && s.type.isBoss && s.typeName === 'inugami01') {
                             const hpRate = (s.maxHealth > 0) ? (s.health / s.maxHealth) : 1;
 
-                            // HP70%以下で「上部出現→数秒後に真下へ飛ぶ（雷）」を発動。3本のX位置は毎回ランダム。
-                            if (hpRate <= 0.70) {
+                            // 「上部出現→数秒後に真下へ飛ぶ（雷）」を発動。3本のX位置は毎回ランダム。
+                            {
                                 const y = 80;
-                                const speed = 3;
+                                const speed = (hpRate <= 0.30) ? (3 * 1.5) : 3;
 
                                 const pickThunderXs = () => {
                                     const candidates = [
@@ -1875,7 +1978,7 @@ Presented by
                                         const tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
                                     }
                                     const chosen = [];
-                                    const minDist = 80;
+                                    const minDist = 50;
                                     for (let i = 0; i < candidates.length; i++) {
                                         const x = candidates[i];
                                         if (chosen.every(cx => Math.abs(cx - x) >= minDist)) chosen.push(x);
@@ -1898,7 +2001,7 @@ Presented by
                                 }
                             }
 
-                            // 雷は従来どおり5秒周期（HP70%以上のときは出ない）
+                            // 雷は従来どおり5秒周期
                             this.bossAttackTimer = 5000;
                         } else {
                             this.bossAttackTimer = 500;
@@ -1966,6 +2069,8 @@ Presented by
                             s.stage8PatternTimerMs = 0;
                             s.stage8BurstRemaining = 0;
                             s.stage8OscBurstRemaining = 0;
+                            s.stage8P100Step = 0;
+                            s.stage8P100TimerMs = 0;
                             s.stage8P70ShotRemaining = 0;
                             s.stage8P70TimerMs = 0;
                             s.stage8TenguBurstRemaining = 0;
@@ -1977,77 +2082,58 @@ Presented by
                             s.stage8SpinWaitMs = 0;
                         }
 
-                        // HP70%より上：
-                        // 3連射(vx=0,vy=2,300ms間隔) → 2秒待機 → 2-1横ブレ弾を2連射(300ms間隔) → 2秒待機 → 繰り返し
-                        if (phase === 0) {
-                            if (!Number.isFinite(s.stage8PatternPhase)) s.stage8PatternPhase = 0;
-                            if (!Number.isFinite(s.stage8PatternTimerMs)) s.stage8PatternTimerMs = 0;
-                            if (!Number.isFinite(s.stage8BurstRemaining)) s.stage8BurstRemaining = 0;
-                            if (!Number.isFinite(s.stage8OscBurstRemaining)) s.stage8OscBurstRemaining = 0;
-
-                            const cfg = s.type;
-                            const baseR = ((cfg.bulletRadius || 8) * 1.5);
-                            const r = (baseR * 2);
-
-                            const sx = s.x + s.width / 2;
-                            const sy = s.y + s.height;
-
-                            const spawnDown = () => {
-                                this.invaderBullets.push(new Bullet(sx, sy, 2, cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
-                            };
-                            const spawnOsc = () => {
-                                // 2-1の「横ブレ」弾と同じ設定
-                                const vy = 3;
-                                const vx = 0;
-                                const b = new Bullet(sx, sy, vy * 0.35, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r);
-                                b.oscillateX = true; b.baseVx = vx; b.oscAmp = 6.6; b.oscSpeed = 0.25;
-                                this.invaderBullets.push(b);
-                            };
-
-                            if (s.stage8BurstRemaining > 0) {
-                                s.stage8PatternTimerMs -= dtMs;
-                                if (s.stage8PatternTimerMs <= 0) {
-                                    spawnDown();
-                                    s.stage8BurstRemaining -= 1;
-                                    s.stage8PatternTimerMs = 300;
-                                }
-                                return;
-                            }
-                            if (s.stage8OscBurstRemaining > 0) {
-                                s.stage8PatternTimerMs -= dtMs;
-                                if (s.stage8PatternTimerMs <= 0) {
-                                    spawnOsc();
-                                    s.stage8OscBurstRemaining -= 1;
-                                    s.stage8PatternTimerMs = 300;
-                                }
-                                return;
-                            }
-
-                            s.stage8PatternTimerMs -= dtMs;
-                            if (s.stage8PatternTimerMs > 0) return;
-
-                            const phase = (s.stage8PatternPhase || 0) % 4;
-                            if (phase === 0) {
-                                s.stage8BurstRemaining = 3;
-                                s.stage8PatternTimerMs = 0;
-                            } else if (phase === 1) {
-                                s.stage8PatternTimerMs = 2000;
-                            } else if (phase === 2) {
-                                s.stage8OscBurstRemaining = 2;
-                                s.stage8PatternTimerMs = 0;
-                            } else {
-                                s.stage8PatternTimerMs = 2000;
-                            }
-                            s.stage8PatternPhase = phase + 1;
-                            return;
-                        }
-
                         const cfg = s.type;
                         const sx = s.x + s.width / 2;
                         const sy = s.y + s.height;
 
+                        // HP70%より上：
+                        // 1-3ボスと同じ攻撃パターン（6step）
+                        if (phase === 0) {
+                            if (!Number.isFinite(s.stage8P100Step)) s.stage8P100Step = 0;
+                            if (!Number.isFinite(s.stage8P100TimerMs)) s.stage8P100TimerMs = 0;
+
+                            s.stage8P100TimerMs -= dtMs;
+                            if (s.stage8P100TimerMs <= 0) {
+                                const vyBase = 2.4;
+                                const baseR = (cfg.bulletRadius || 8) * 1.5;
+                                const r = (baseR * 2) * 0.7;
+
+                                const step = (s.stage8P100Step || 0) % 6;
+                                if (step === 0 || step === 1 || step === 3 || step === 4) {
+                                    this.invaderBullets.push(new Bullet(sx, sy, Math.abs(vyBase), cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                } else if (step === 2) {
+                                    const count = 3;
+                                    const speed = 3;
+                                    const centerAngle = Math.PI / 2;
+                                    const spread = 0.55;
+                                    const startAngle = centerAngle - spread / 2;
+                                    const stepA = (spread / (count - 1));
+                                    for (let i = 0; i < count; i++) {
+                                        const a = startAngle + stepA * i;
+                                        const nvx = Math.cos(a) * speed;
+                                        const nvy = Math.sin(a) * speed;
+                                        this.invaderBullets.push(new Bullet(sx, sy, nvy, cfg.bulletColor || COLORS.CYAN, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    }
+                                } else if (step === 5) {
+                                    const playerCx = this.player.x + this.player.width / 2;
+                                    const playerCy = this.player.y + this.player.height / 2;
+                                    const dx = playerCx - sx;
+                                    const dy = playerCy - sy;
+                                    const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                    const spd = 3;
+                                    const avx = (dx / dist) * spd;
+                                    const avy = (dy / dist) * spd;
+                                    this.invaderBullets.push(new Bullet(sx, sy, avy, cfg.bulletColor || COLORS.CYAN, avx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                }
+
+                                const intervals = [1000, 500, 1000, 1000, 500, 1000];
+                                s.stage8P100Step = step + 1;
+                                s.stage8P100TimerMs = intervals[step];
+                            }
+                        }
+
                         // HP70%以下：4-3の3way弾を3回→出現して3秒待機 の繰り返し
-                        if (phase === 1) {
+                        else if (phase === 1) {
                             if (!Number.isFinite(s.stage8P70ShotRemaining)) s.stage8P70ShotRemaining = 0;
                             if (!Number.isFinite(s.stage8P70TimerMs)) s.stage8P70TimerMs = 0;
 
@@ -2069,24 +2155,24 @@ Presented by
                             };
 
                             s.stage8P70TimerMs -= dtMs;
-                            if (s.stage8P70TimerMs > 0) return;
+                            if (s.stage8P70TimerMs <= 0) {
 
-                            if (s.stage8P70ShotRemaining <= 0) {
-                                s.stage8P70ShotRemaining = 3;
-                            }
+                                if (s.stage8P70ShotRemaining <= 0) {
+                                    s.stage8P70ShotRemaining = 3;
+                                }
 
-                            spawnFan43();
-                            s.stage8P70ShotRemaining -= 1;
-                            if (s.stage8P70ShotRemaining > 0) {
-                                s.stage8P70TimerMs = 600;
-                            } else {
-                                s.stage8P70TimerMs = 3000;
+                                spawnFan43();
+                                s.stage8P70ShotRemaining -= 1;
+                                if (s.stage8P70ShotRemaining > 0) {
+                                    s.stage8P70TimerMs = 600;
+                                } else {
+                                    s.stage8P70TimerMs = 3000;
+                                }
                             }
-                            return;
                         }
 
                         // HP50%以下：tengu03の攻撃（狙い撃ち）
-                        if (phase === 2) {
+                        else if (phase === 2) {
                             if (!Number.isFinite(s.stage8TenguGateTimerMs)) s.stage8TenguGateTimerMs = 0;
                             if (!Number.isFinite(s.stage8TenguTimerMs)) s.stage8TenguTimerMs = 0;
                             if (!Number.isFinite(s.stage8TenguBurstRemaining)) s.stage8TenguBurstRemaining = 0;
@@ -2107,25 +2193,25 @@ Presented by
 
                             if (s.stage8TenguBurstRemaining > 0) {
                                 s.stage8TenguTimerMs -= dtMs;
-                                if (s.stage8TenguTimerMs > 0) return;
-                                spawnTengu03Aimed();
-                                s.stage8TenguBurstRemaining -= 1;
-                                s.stage8TenguTimerMs = 600;
-                                if (s.stage8TenguBurstRemaining <= 0) {
-                                    s.stage8TenguGateTimerMs = 1600;
+                                if (s.stage8TenguTimerMs <= 0) {
+                                    spawnTengu03Aimed();
+                                    s.stage8TenguBurstRemaining -= 1;
+                                    s.stage8TenguTimerMs = 600;
+                                    if (s.stage8TenguBurstRemaining <= 0) {
+                                        s.stage8TenguGateTimerMs = 1600;
+                                    }
                                 }
-                                return;
                             }
 
                             s.stage8TenguGateTimerMs -= dtMs;
-                            if (s.stage8TenguGateTimerMs > 0) return;
-                            s.stage8TenguBurstRemaining = 3;
-                            s.stage8TenguTimerMs = 0;
-                            return;
+                            if (s.stage8TenguGateTimerMs <= 0 && s.stage8TenguBurstRemaining <= 0) {
+                                s.stage8TenguBurstRemaining = 3;
+                                s.stage8TenguTimerMs = 0;
+                            }
                         }
 
                         // HP30%以下：inugami02_tamaを放射状に1回転発射→5秒待機→繰り返し
-                        if (phase === 3) {
+                        else if (phase === 3) {
                             if (!Number.isFinite(s.stage8SpinWaitMs)) s.stage8SpinWaitMs = 0;
                             if (!Number.isFinite(s.stage8SpinTimerMs)) s.stage8SpinTimerMs = 0;
                             if (!Number.isFinite(s.stage8SpinStep)) s.stage8SpinStep = 0;
@@ -2137,37 +2223,22 @@ Presented by
 
                             if (s.stage8SpinWaitMs > 0) {
                                 s.stage8SpinWaitMs -= dtMs;
-                                return;
-                            }
+                            } else {
+                                const ringCount = 8;
+                                const speed = 3;
+                                const baseAngle = 0;
+                                for (let i = 0; i < ringCount; i++) {
+                                    const a = baseAngle + (i * (Math.PI * 2 / ringCount));
+                                    const vx = Math.cos(a) * speed;
+                                    const vy = Math.sin(a) * speed;
+                                    this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', img, r));
+                                }
 
-                            if (!s.stage8SpinActive) {
-                                s.stage8SpinActive = true;
+                                s.stage8SpinActive = false;
                                 s.stage8SpinStep = 0;
                                 s.stage8SpinTimerMs = 0;
+                                s.stage8SpinWaitMs = 3000;
                             }
-
-                            s.stage8SpinTimerMs -= dtMs;
-                            if (s.stage8SpinTimerMs > 0) return;
-
-                            const totalSteps = 20;
-                            const ringCount = 8;
-                            const speed = 3;
-                            const baseAngle = (s.stage8SpinStep / totalSteps) * (Math.PI * 2);
-                            for (let i = 0; i < ringCount; i++) {
-                                const a = baseAngle + (i * (Math.PI * 2 / ringCount));
-                                const vx = Math.cos(a) * speed;
-                                const vy = Math.sin(a) * speed;
-                                this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', img, r));
-                            }
-
-                            s.stage8SpinStep += 1;
-                            if (s.stage8SpinStep >= totalSteps) {
-                                s.stage8SpinActive = false;
-                                s.stage8SpinWaitMs = 5000;
-                            } else {
-                                s.stage8SpinTimerMs = 120;
-                            }
-                            return;
                         }
                     }
                 } else {
@@ -2235,7 +2306,15 @@ Presented by
                                     this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                                 }
                             } else {
-                                s.stage6BurstRemaining = 3;
+                                if (stageCfg && stageCfg.waveLabel === '6-2') {
+                                    s.stage6BurstRemaining = (s.typeName === 'tengu') ? 3 : 0;
+                                } else if (stageCfg && stageCfg.waveLabel === '6-3') {
+                                    if (s.typeName === 'tengu') s.stage6BurstRemaining = 2;
+                                    else if (s.typeName === 'tengu03') s.stage6BurstRemaining = 2;
+                                    else s.stage6BurstRemaining = 0;
+                                } else {
+                                    s.stage6BurstRemaining = 3;
+                                }
                                 s.stage6BurstTimerMs = 0;
                             }
                         });
@@ -2251,10 +2330,12 @@ Presented by
                             const r = baseR;
                             const roll = Math.random();
 
-                            if (roll < 0.70) {
+                            const isPowerUpFx = (s.type && s.type.canHide && this.aliveInvaderCount > 0 && this.aliveInvaderCount <= 3);
+
+                            if (roll < (isPowerUpFx ? 0.55 : 0.70)) {
                                 return;
-                            } else if (roll < 0.90) {
-                                const vy = 4;
+                            } else if (roll < (isPowerUpFx ? 0.85 : 0.90)) {
+                                const vy = 2;
                                 const vx = 0;
                                 this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
                             } else {
@@ -2268,100 +2349,103 @@ Presented by
                             }
                         });
                     } else {
-                    let shootProb = (stageCfg.isMidBoss ? 0.02 : 0.005);
-                    if (stageCfg.waveLabel === '1-2') shootProb *= 1.5;
-                    if (stageCfg.waveLabel === '3-1' || stageCfg.waveLabel === '3-2') shootProb *= 1.3333333333;
-                    if (stageCfg.waveLabel === '1-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 2;
-                    if (stageCfg.waveLabel === '2-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 2;
-                    if (stageCfg.waveLabel === '2-2' && this.visibleHyoutan02Count > 0 && this.visibleHyoutan02Count <= 3) shootProb *= 1.5;
-                    if (stageCfg.waveLabel === '3-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
-                    if (stageCfg.waveLabel === '3-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 1.5;
-                    if (stageCfg.waveLabel === '5-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
-                    if (stageCfg.waveLabel === '5-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
-                    if (Math.random() < shootProb && this.invaders.length > 0) {
-                        const s = this.invaders[Math.floor(Math.random() * this.invaders.length)]; if (s.isVisible) {
-                            if ((stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && (s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03')) return;
-                            if (!((stageCfg.waveLabel === '4-1' || stageCfg.waveLabel === '4-2') && s.type && s.type.canHide && this.aliveInvaderCount > 0 && this.aliveInvaderCount <= 3)) {
-                                const cfg = s.type; let vx = 0, vy = (Number.isFinite(stageCfg.enemyBulletVy) ? stageCfg.enemyBulletVy : 3);
-                            if (s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03' || s.type.isBoss || (stageCfg.waveLabel === '1-2' && Math.random() < 0.25)) {
-                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
-                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
-                                const dist = Math.sqrt(dx * dx + dy * dy);
-                                let spd = (stageCfg.waveLabel === '1-2') ? 1.5 : 3;
-                                if (s.typeName === 'tengu03') {
-                                    vx = 0; vy = 3;
-                                } else {
-                                    vx = (dx / dist) * spd; vy = (dy / dist) * spd;
-                                }
-                            } else if (stageCfg.waveLabel === '2-1' && Math.random() < 0.20) {
-                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
-                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
-                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                const spd = 2.5;
-                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
-                            } else if (stageCfg.waveLabel === '2-2' && Math.random() < 0.20) {
-                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
-                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
-                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                const spd = 3;
-                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
-                            } else if (stageCfg.waveLabel === '3-1' && Math.random() < 0.20) {
-                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
-                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
-                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                const spd = 2.5;
-                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
-                            } else if (stageCfg.waveLabel === '3-2' && Math.random() < 0.20) {
-                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
-                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
-                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                const spd = 3;
-                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
-                            } else if ((stageCfg.waveLabel === '5-1' || stageCfg.waveLabel === '5-2') && Math.random() < 0.25) {
-                                const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
-                                const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
-                                const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
-                                const spd = 1.0;
-                                vx = (dx / dist) * spd; vy = (dy / dist) * spd;
-                            }
-                            const baseR = (stageCfg.waveLabel === '1-1' || stageCfg.waveLabel === '1-2') ? 14 : ((cfg.bulletRadius || 8) * 1.5);
-                            let r = (s.isMidBoss || cfg.isBoss) ? (baseR * 2) : baseR;
-                            if ((stageCfg.waveLabel === '2-1' || stageCfg.waveLabel === '2-2') && !s.isMidBoss && !cfg.isBoss) r = r * 2;
-                            if ((stageCfg.waveLabel === '5-1' || stageCfg.waveLabel === '5-2') && !s.isMidBoss && !cfg.isBoss) r = r * 2;
-
-                            if (s.isMidBoss || cfg.isBoss) {
-                                s.shotPatternCounter = (s.shotPatternCounter || 0) + 1;
-                                let isFan = (s.shotPatternCounter % 3 === 0);
-                                if (s.typeName === 'tengu02') isFan = true;
-                                if (s.typeName === 'tengu03') isFan = false;
-                                if (isFan) {
-                                    const count = 3;
-                                    const speed = Math.max(0.001, Math.sqrt(vx * vx + vy * vy));
-                                    const centerAngle = Math.atan2(vy, vx);
-                                    const spread = 0.6;
-                                    const startAngle = centerAngle - spread / 2;
-                                    const step = (count === 1) ? 0 : (spread / (count - 1));
-                                    for (let i = 0; i < count; i++) {
-                                        const a = startAngle + step * i;
-                                        const nvx = Math.cos(a) * speed;
-                                        const nvy = Math.sin(a) * speed;
-                                        this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                        if (stageCfg.waveLabel !== '8') {
+                            let shootProb = (stageCfg.isMidBoss ? 0.02 : 0.005);
+                            if (stageCfg.waveLabel === '1-2') shootProb *= 1.5;
+                            if (stageCfg.waveLabel === '3-1' || stageCfg.waveLabel === '3-2') shootProb *= 1.3333333333;
+                            if (stageCfg.waveLabel === '1-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 2;
+                            if (stageCfg.waveLabel === '2-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 2;
+                            if (stageCfg.waveLabel === '2-2' && this.visibleHyoutan02Count > 0 && this.visibleHyoutan02Count <= 3) shootProb *= 1.5;
+                            if (stageCfg.waveLabel === '3-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
+                            if (stageCfg.waveLabel === '3-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 5) shootProb *= 1.5;
+                            if (stageCfg.waveLabel === '5-1' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
+                            if (stageCfg.waveLabel === '5-2' && this.visibleInvaderCount > 0 && this.visibleInvaderCount <= 3) shootProb *= 1.5;
+                            if (Math.random() < shootProb && this.invaders.length > 0) {
+                                const s = this.invaders[Math.floor(Math.random() * this.invaders.length)]; if (s.isVisible) {
+                                    if ((stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && (s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03')) return;
+                                    if (!((stageCfg.waveLabel === '4-1' || stageCfg.waveLabel === '4-2') && s.type && s.type.canHide && this.aliveInvaderCount > 0 && this.aliveInvaderCount <= 3)) {
+                                        const cfg = s.type; let vx = 0, vy = (Number.isFinite(stageCfg.enemyBulletVy) ? stageCfg.enemyBulletVy : 3);
+                                        if (stageCfg.waveLabel === '4-1' || stageCfg.waveLabel === '4-2') vy = 2;
+                                    if (s.typeName === 'tengu' || s.typeName === 'tengu02' || s.typeName === 'tengu03' || s.type.isBoss || (stageCfg.waveLabel === '1-2' && Math.random() < 0.25)) {
+                                        const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                        const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                        const dist = Math.sqrt(dx * dx + dy * dy);
+                                        let spd = (stageCfg.waveLabel === '1-2') ? 1.5 : 3;
+                                        if (s.typeName === 'tengu03') {
+                                            vx = 0; vy = 3;
+                                        } else {
+                                            vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                                        }
+                                    } else if (stageCfg.waveLabel === '2-1' && Math.random() < 0.20) {
+                                        const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                        const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                        const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                        const spd = 2.5;
+                                        vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                                    } else if (stageCfg.waveLabel === '2-2' && Math.random() < 0.20) {
+                                        const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                        const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                        const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                        const spd = 3;
+                                        vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                                    } else if (stageCfg.waveLabel === '3-1' && Math.random() < 0.20) {
+                                        const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                        const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                        const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                        const spd = 2.5;
+                                        vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                                    } else if (stageCfg.waveLabel === '3-2' && Math.random() < 0.20) {
+                                        const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                        const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                        const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                        const spd = 3;
+                                        vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+                                    } else if ((stageCfg.waveLabel === '5-1' || stageCfg.waveLabel === '5-2') && Math.random() < 0.25) {
+                                        const dx = (this.player.x + this.player.width / 2) - (s.x + s.width / 2);
+                                        const dy = (this.player.y + this.player.height / 2) - (s.y + s.height);
+                                        const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                        const spd = 1.0;
+                                        vx = (dx / dist) * spd; vy = (dy / dist) * spd;
                                     }
-                                } else {
-                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                    const baseR = (stageCfg.waveLabel === '1-1' || stageCfg.waveLabel === '1-2') ? 14 : ((cfg.bulletRadius || 8) * 1.5);
+                                    let r = (s.isMidBoss || cfg.isBoss) ? (baseR * 2) : baseR;
+                                    if ((stageCfg.waveLabel === '2-1' || stageCfg.waveLabel === '2-2') && !s.isMidBoss && !cfg.isBoss) r = r * 2;
+                                    if ((stageCfg.waveLabel === '5-1' || stageCfg.waveLabel === '5-2') && !s.isMidBoss && !cfg.isBoss) r = r * 2;
+
+                                    if (s.isMidBoss || cfg.isBoss) {
+                                        s.shotPatternCounter = (s.shotPatternCounter || 0) + 1;
+                                        let isFan = (s.shotPatternCounter % 3 === 0);
+                                        if (s.typeName === 'tengu02') isFan = true;
+                                        if (s.typeName === 'tengu03') isFan = false;
+                                        if (isFan) {
+                                            const count = (stageCfg && stageCfg.waveLabel === '5-3' && s.typeName === 'oni03') ? 2 : 3;
+                                            const speed = Math.max(0.001, Math.sqrt(vx * vx + vy * vy));
+                                            const centerAngle = Math.atan2(vy, vx);
+                                            const spread = 0.6;
+                                            const startAngle = centerAngle - spread / 2;
+                                            const step = (count === 1) ? 0 : (spread / (count - 1));
+                                            for (let i = 0; i < count; i++) {
+                                                const a = startAngle + step * i;
+                                                const nvx = Math.cos(a) * speed;
+                                                const nvy = Math.sin(a) * speed;
+                                                this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, nvy, cfg.bulletColor || COLORS.YELLOW, nvx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                            }
+                                        } else {
+                                            this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                        }
+                                    } else {
+                                        if ((stageCfg.waveLabel === '2-1' || stageCfg.waveLabel === '2-2') && Math.random() < 0.18) {
+                                            const b = new Bullet(s.x + s.width / 2, s.y + s.height, vy * 0.35, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r);
+                                            b.oscillateX = true; b.baseVx = vx; b.oscAmp = 6.6; b.oscSpeed = 0.25;
+                                            this.invaderBullets.push(b);
+                                        } else {
+                                            this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
+                                        }
+                                    }
+                                    }
                                 }
-                            } else {
-                                if ((stageCfg.waveLabel === '2-1' || stageCfg.waveLabel === '2-2') && Math.random() < 0.18) {
-                                    const b = new Bullet(s.x + s.width / 2, s.y + s.height, vy * 0.35, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r);
-                                    b.oscillateX = true; b.baseVx = vx; b.oscAmp = 6.6; b.oscSpeed = 0.25;
-                                    this.invaderBullets.push(b);
-                                } else {
-                                    this.invaderBullets.push(new Bullet(s.x + s.width / 2, s.y + s.height, vy, cfg.bulletColor || COLORS.YELLOW, vx, true, cfg.bulletShape || 'circle', cfg.bulletImage, r));
-                                }
-                            }
                             }
                         }
-                    }
                     }
                 }
                 this.checkCollisions();
@@ -2461,6 +2545,16 @@ Presented by
             }
             showEnding() {
                 this.gameOver = true;
+                this.player.bullets = [];
+                this.invaderBullets = [];
+                this.items = [];
+                this.invaders = [];
+                this.pendingInvaders = [];
+                this.souls = [];
+                this.blasts = [];
+                this.particles = [];
+                if (this.bgm) { try { this.bgm.pause(); } catch (e) { } }
+                this.playBGM('ED_song.mp3');
                 this.ui.uiLayer.classList.add('hidden');
                 this.ui.logo.classList.add('hidden');
                 this.ui.endFinalScore.innerText = this.score;
@@ -2483,7 +2577,9 @@ Presented by
                 if (this.score > hs) localStorage.setItem('wazaika_high_score', this.score);
             }
             checkCollisions() {
-                const pHit = { x: this.player.x + 12, y: this.player.y + 10, width: this.player.width - 24, height: this.player.height - 20 };
+                const pCx = this.player.x + this.player.width / 2;
+                const pCy = this.player.y + this.player.height / 2;
+                const pHit = { x: pCx - 13, y: pCy - 20, width: 26, height: 40 };
                 const explosions = [];
                 const stageCfg = STAGE_CONFIG[this.currentStage];
                 this.player.bullets.forEach(b => {
@@ -2654,18 +2750,37 @@ Presented by
             applyDamage(inv, dmg) {
                 if (inv.markedForDeletion) return; inv.health -= dmg; inv.hitFlash = 3; this.safePlay(this.damageSound);
 
+                const stageCfg = STAGE_CONFIG[this.currentStage];
+                const pickPowerUpDropType = () => {
+                    const wl = (stageCfg && stageCfg.waveLabel) ? String(stageCfg.waveLabel) : '';
+                    const r = Math.random();
+                    const pick122 = () => {
+                        if (r < 0.20) return 'totu';
+                        if (r < 0.40) return 'baku';
+                        if (r < 0.70) return 'ren';
+                        return 'san';
+                    };
+                    const pick457 = () => {
+                        if (r < 0.30) return 'totu';
+                        if (r < 0.60) return 'baku';
+                        if (r < 0.70) return 'ren';
+                        return 'san';
+                    };
+                    if (wl.startsWith('1-') || wl.startsWith('2-')) return pick122();
+                    if (wl.startsWith('4-') || wl.startsWith('5-') || wl.startsWith('6-') || wl === '7') return pick457();
+                    return ['totu', 'baku', 'ren', 'san'][Math.floor(Math.random() * 4)];
+                };
+
                 if (inv.type && inv.type.isBoss && inv.typeName === 'inugami01') {
                     const hpRate = (inv.maxHealth > 0) ? (inv.health / inv.maxHealth) : 0;
                     if (!inv.bossDrop70Done && hpRate <= 0.70) {
                         inv.bossDrop70Done = true;
-                        const types = ['totu', 'baku', 'ren', 'san'];
-                        const dropType = types[Math.floor(Math.random() * types.length)];
+                        const dropType = pickPowerUpDropType();
                         this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
                     }
                     if (!inv.bossDrop30Done && hpRate <= 0.30) {
                         inv.bossDrop30Done = true;
-                        const types = ['totu', 'baku', 'ren', 'san'];
-                        const dropType = types[Math.floor(Math.random() * types.length)];
+                        const dropType = pickPowerUpDropType();
                         this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
                     }
                 }
@@ -2690,21 +2805,17 @@ Presented by
 
                     this.killedCountInWave++;
 
-                    const stageCfg = STAGE_CONFIG[this.currentStage];
-                    if (stageCfg && stageCfg.waveLabel === '8' && inv.typeName === 'tinoishi' && !this.mbremDropped) {
-                        this.mbremDropped = true;
+                    if (stageCfg && stageCfg.waveLabel === '8' && inv.typeName === 'tinoishi') {
                         this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, 'mbrem'));
                     }
                     if (inv.isMidBoss && stageCfg && (stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && (inv.typeName === 'tengu' || inv.typeName === 'tengu02')) {
-                        const types = ['totu', 'baku', 'ren', 'san'];
-                        const dropType = types[Math.floor(Math.random() * types.length)];
+                        const dropType = pickPowerUpDropType();
                         this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
                     }
                     if (!stageCfg.isMidBoss && !ENEMY_TYPES[inv.typeName].isBoss) {
                         // 既存の3体ごと武器ドロップ
                         if (this.killedCountInWave === 3) {
-                            const types = ['totu', 'baku', 'ren', 'san'];
-                            const dropType = types[Math.floor(Math.random() * types.length)];
+                            const dropType = pickPowerUpDropType();
                             this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, dropType));
                         } else {
                             // 武器が出なかった場合のみ、ランダムドロップ抽選を行う
@@ -2745,12 +2856,22 @@ Presented by
                 const aIsCenter = (a instanceof Bullet) || (a instanceof Item) || (a && a.centerBased === true);
                 const bIsCenter = (b instanceof Bullet) || (b instanceof Item) || (b && b.centerBased === true);
 
-                const ax = aIsCenter ? (a.x - a.width / 2) : a.x;
-                const ay = aIsCenter ? (a.y - a.height / 2) : a.y;
-                const bx = bIsCenter ? (b.x - b.width / 2) : b.x;
-                const by = bIsCenter ? (b.y - b.height / 2) : b.y;
+                const aScaleX = (a && Number.isFinite(a.hitboxScaleX)) ? a.hitboxScaleX : 1;
+                const aScaleY = (a && Number.isFinite(a.hitboxScaleY)) ? a.hitboxScaleY : 1;
+                const bScaleX = (b && Number.isFinite(b.hitboxScaleX)) ? b.hitboxScaleX : 1;
+                const bScaleY = (b && Number.isFinite(b.hitboxScaleY)) ? b.hitboxScaleY : 1;
 
-                return ax < bx + b.width && ax + a.width > bx && ay < by + b.height && ay + a.height > by;
+                const aW = a.width * aScaleX;
+                const aH = a.height * aScaleY;
+                const bW = b.width * bScaleX;
+                const bH = b.height * bScaleY;
+
+                const ax = aIsCenter ? (a.x - aW / 2) : (a.x + (a.width - aW) / 2);
+                const ay = aIsCenter ? (a.y - aH / 2) : (a.y + (a.height - aH) / 2);
+                const bx = bIsCenter ? (b.x - bW / 2) : (b.x + (b.width - bW) / 2);
+                const by = bIsCenter ? (b.y - bH / 2) : (b.y + (b.height - bH) / 2);
+
+                return ax < bx + bW && ax + aW > bx && ay < by + bH && ay + aH > by;
             }
 
             draw() {
