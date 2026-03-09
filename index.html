@@ -356,11 +356,12 @@
 
         #ending-credits {
             position: absolute;
+            top: 0;
             left: 0;
             width: 100%;
             text-align: center;
             white-space: pre-line;
-            transform: translateY(100%);
+            transform: translateY(220px);
             font-size: 20px;
             line-height: 1.5;
             color: var(--text-color);
@@ -383,11 +384,15 @@
 
         @keyframes endingCreditsScroll {
             0% {
-                transform: translateY(100%);
+                transform: translateY(220px);
+            }
+
+            2% {
+                transform: translateY(220px);
             }
 
             100% {
-                transform: translateY(-100%);
+                transform: translateY(calc(-100% - 220px));
             }
         }
 
