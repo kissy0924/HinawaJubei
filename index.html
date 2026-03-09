@@ -1367,7 +1367,7 @@ Presented by
                 requestAnimationFrame(this.loop.bind(this));
             }
             setupAudio() {
-                const s = (f) => { try { let a = new Audio(f); a.volume = 0.4; return a; } catch (e) { return null; } };
+                const s = (f) => { try { let a = new Audio(f); a.volume = 1.0; return a; } catch (e) { return null; } };
                 this.shotSound = s('player_shot.mp3'); this.damageSound = s('enemy_damage.mp3');
                 this.playerDamageSound = s('player_damage.mp3'); this.gameOverSound = s('wafu-gameover.mp3');
                 this.startSound = s('Mekkarimosan.mp3'); this.clearSound = s('clear.mp3');
@@ -1402,6 +1402,7 @@ Presented by
                 this.liteMode = false;
                 this.perfAvgDtMs = 16.6667;
                 this.perfBadAccumMs = 0;
+                this.lastDtMs = 16.6667;
 
                 this.bonusLife1Granted = false;
                 this.bonusLife2Granted = false;
@@ -2990,6 +2991,17 @@ Presented by
                 this.ctx.clearRect(0, 0, 400, 600);
                 if (this.bgImage.complete) this.ctx.drawImage(this.bgImage, 0, 0, 400, 600);
 
+                this.ctx.save();
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                this.ctx.fillRect(6, 6, 190, 56);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '12px monospace';
+                const dtMs = (Number.isFinite(this.lastDtMs) ? this.lastDtMs : 0).toFixed(1);
+                const avgMs = (Number.isFinite(this.perfAvgDtMs) ? this.perfAvgDtMs : 0).toFixed(1);
+                this.ctx.fillText(`dt:${dtMs} avg:${avgMs} lite:${this.liteMode ? 1 : 0}`, 10, 24);
+                this.ctx.fillText(`particles:${this.particles.length} souls:${this.souls.length}`, 10, 42);
+                this.ctx.restore();
+
                 // 隠しアイテムの描画
                 if (this.hiddenItemFound) {
                     this.ctx.save();
@@ -3043,6 +3055,7 @@ Presented by
             loop(ts) {
                 if (this.lastFrameTs == null) this.lastFrameTs = ts;
                 const dt = ts - this.lastFrameTs;
+                this.lastDtMs = dt;
                 this.lastFrameTs = ts;
 
                 if (!this.liteMode) {
