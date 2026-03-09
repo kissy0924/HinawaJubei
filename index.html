@@ -1399,6 +1399,10 @@ Presented by
                 this.waveTransitioning = false; this.invaderDirection = 1; this.bgImage = new Image(); this.gameStartedInitiated = false;
                 this.endingTapEnabled = false;
 
+                this.liteMode = false;
+                this.perfAvgDtMs = 16.6667;
+                this.perfBadAccumMs = 0;
+
                 this.bonusLife1Granted = false;
                 this.bonusLife2Granted = false;
 
@@ -1428,6 +1432,7 @@ Presented by
                 }
             }
             safePlay(sound) { if (sound) { try { sound.currentTime = 0; } catch (e) { } sound.play().catch(() => { }); } }
+            getFxMul() { return this.liteMode ? 0.35 : 1; }
             playTitleBGM() {
                 if (!this.titleBgm) return;
                 if (this.gameStartedInitiated) return;
@@ -2775,20 +2780,23 @@ Presented by
 
                         if (it.type === 'wakasa') {
                             this.player.wakasaOptionActive = true;
-                            for (let i = 0; i < 40; i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
+                            const fxMul = this.getFxMul();
+                            for (let i = 0; i < Math.max(1, Math.floor(40 * fxMul)); i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
                         } else if (it.type === 'mbrem') {
                             this.player.isInvincible = true;
                             this.player.invincibleTimer = 5000;
                             this.lives = this.maxVisibleHearts;
                             this.updateLivesUI();
-                            for (let i = 0; i < 60; i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
+                            const fxMul = this.getFxMul();
+                            for (let i = 0; i < Math.max(1, Math.floor(60 * fxMul)); i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
                         } else if (it.type === 'koban') {
                             // 小判専用SE再生
                             this.safePlay(this.kobanSound);
                             // 小判効果: 500点加算
                             this.score += 500;
                             this.ui.score.innerText = this.score;
-                            for (let i = 0; i < 30; i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
+                            const fxMul = this.getFxMul();
+                            for (let i = 0; i < Math.max(1, Math.floor(30 * fxMul)); i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
                         } else if (it.type === 'imo') {
                             // 回復アイテム
                             this.safePlay(this.imoSound);
@@ -2798,8 +2806,9 @@ Presented by
                             }
                             this.score += 100;
                             this.ui.score.innerText = this.score;
-                            for (let i = 0; i < 30; i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
-                            for (let i = 0; i < 15; i++) this.particles.push(new Particle(it.x, it.y, COLORS.GREEN));
+                            const fxMul = this.getFxMul();
+                            for (let i = 0; i < Math.max(1, Math.floor(30 * fxMul)); i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
+                            for (let i = 0; i < Math.max(1, Math.floor(15 * fxMul)); i++) this.particles.push(new Particle(it.x, it.y, COLORS.GREEN));
                         } else {
                             // 既存アイテム (武器系)
                             this.powerUpItemCount++;
@@ -2930,7 +2939,8 @@ Presented by
                     }
 
                     let sc = 3, sm = 1; if (inv.type.isBoss) { sc = 100; sm = 3; } else if (inv.isMidBoss) { sc = 30; sm = 2; }
-                    for (let i = 0; i < sc; i++) this.souls.push(new SoulParticle(inv.x + inv.width / 2, inv.y + inv.height / 2, sm));
+                    const fxMul = this.getFxMul();
+                    for (let i = 0; i < Math.max(1, Math.floor(sc * fxMul)); i++) this.souls.push(new SoulParticle(inv.x + inv.width / 2, inv.y + inv.height / 2, sm));
                     if (inv.typeName === 'hitotume' || inv.typeName === 'hitotume02') {
                         this.invaderBullets.push(new Bullet(inv.x + inv.width / 2, inv.y + inv.height, 3, COLORS.YELLOW, 2, true, 'star', 'hitotume_tama.png', 12));
                         this.invaderBullets.push(new Bullet(inv.x + inv.width / 2, inv.y + inv.height, 3, COLORS.YELLOW, -2, true, 'star', 'hitotume_tama.png', 12));
@@ -2945,7 +2955,8 @@ Presented by
                         }
                     }
                     if (inv.type.splitInto && !inv.isMidBoss) { for (let i = 0; i < 2; i++) this.pendingInvaders.push(new Invader(inv.x + (i === 0 ? -15 : 15), inv.y, inv.type.splitInto, this)); }
-                    for (let i = 0; i < 8; i++) this.particles.push(new Particle(inv.x + inv.width / 2, inv.y + inv.height / 2, inv.color));
+                    const fxMul2 = this.getFxMul();
+                    for (let i = 0; i < Math.max(1, Math.floor(8 * fxMul2)); i++) this.particles.push(new Particle(inv.x + inv.width / 2, inv.y + inv.height / 2, inv.color));
                 }
             }
             rectHit(a, b) {
@@ -3033,6 +3044,17 @@ Presented by
                 if (this.lastFrameTs == null) this.lastFrameTs = ts;
                 const dt = ts - this.lastFrameTs;
                 this.lastFrameTs = ts;
+
+                if (!this.liteMode) {
+                    const a = (Number.isFinite(this.perfAvgDtMs) ? this.perfAvgDtMs : 16.6667);
+                    const ndt = Number.isFinite(dt) ? dt : 16.6667;
+                    this.perfAvgDtMs = (a * 0.95) + (ndt * 0.05);
+                    const bad = (this.perfAvgDtMs > 28);
+                    this.perfBadAccumMs = Math.max(0, (Number.isFinite(this.perfBadAccumMs) ? this.perfBadAccumMs : 0) + (bad ? ndt : -ndt * 0.5));
+                    if (this.perfBadAccumMs >= 2000) {
+                        this.liteMode = true;
+                    }
+                }
                 this.frameDeltaSec = Math.max(0, Math.min(0.2, dt / 1000));
                 this.update();
                 this.draw();
