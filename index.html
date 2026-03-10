@@ -577,7 +577,7 @@ Presented by
             tengu: { image: 'tengu.png', maxWidth: 62, health: 4, midBossHealth: 4, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane.png' },
             tengu02: { image: 'tengu02.png', maxWidth: 62, health: 5, midBossHealth: 5, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane02.png' },
             tengu03: { image: 'tengu03.png', maxWidth: 62, health: 6, midBossHealth: 6, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane03.png' },
-            inugami01: { image: 'inugami01.png', maxWidth: 240, health: 40, color: COLORS.RED, isBoss: true, circleMove: true, bulletImage: 'inugami01_kaminari.png' },
+            inugami01: { image: 'inugami01.png', maxWidth: 240, health: 30, color: COLORS.RED, isBoss: true, circleMove: true, bulletImage: 'inugami01_kaminari.png' },
             inugami02: { image: 'inugami02.png', maxWidth: 90, health: 60, color: COLORS.MAGENTA, isBoss: true, randomMove: true, bulletImage: 'inugami02_tama.png' }
         };
 
@@ -770,8 +770,6 @@ Presented by
                 } else if (type === 'wakasa') {
                     this.image.src = 'wakasa.png';
                     this.speed = 0;
-                    this.hitboxScaleX = 1.8;
-                    this.hitboxScaleY = 1.8;
                 } else {
                     this.image.src = `item_${type}.png`;
                 }
@@ -1281,6 +1279,7 @@ Presented by
                     else {
                         const stageCfg = (this.game && Number.isFinite(this.game.currentStage)) ? STAGE_CONFIG[this.game.currentStage] : null;
                         const boss7Enraged = (stageCfg && stageCfg.waveLabel === '7' && this.typeName === 'inugami01' && this.maxHealth > 0 && (this.health / this.maxHealth) <= 0.30);
+                        const boss8Enraged = (stageCfg && stageCfg.waveLabel === '8' && this.typeName === 'inugami02' && this.maxHealth > 0 && (this.health / this.maxHealth) <= 0.30);
                         const isEnraged12 = (stageCfg && stageCfg.waveLabel === '1-2' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
                         const isEnraged21 = (stageCfg && stageCfg.waveLabel === '2-1' && this.game && this.game.visibleInvaderCount > 0 && this.game.visibleInvaderCount <= 5);
                         const isEnraged22Hyoutan02 = (stageCfg && stageCfg.waveLabel === '2-2' && this.game && this.game.visibleHyoutan02Count > 0 && this.game.visibleHyoutan02Count <= 3 && this.typeName === 'hyoutan02');
@@ -1297,6 +1296,13 @@ Presented by
                             ctx.filter = 'brightness(1.1) saturate(2.0) hue-rotate(330deg)';
                             ctx.shadowBlur = 18;
                             ctx.shadowColor = COLORS.RED;
+                            ctx.drawImage(this.image, dx, dy, dw, dh);
+                            ctx.restore();
+                        } else if (boss8Enraged) {
+                            ctx.save();
+                            ctx.filter = 'brightness(1.25) saturate(1.9) hue-rotate(210deg)';
+                            ctx.shadowBlur = 22;
+                            ctx.shadowColor = COLORS.CYAN;
                             ctx.drawImage(this.image, dx, dy, dw, dh);
                             ctx.restore();
                         } else if (showEnrageFx) {
@@ -2150,6 +2156,7 @@ Presented by
                             s.stage8SpinTimerMs = 0;
                             s.stage8SpinStep = 0;
                             s.stage8SpinWaitMs = 0;
+                            s.stage8Phase3PowerUpDone = false;
                         }
 
                         const cfg = s.type;
@@ -2166,11 +2173,14 @@ Presented by
                             if (s.stage8P100TimerMs <= 0) {
                                 const vyBase = 2.4;
                                 const baseR = (cfg.bulletRadius || 8) * 1.5;
-                                const r = (baseR * 2) * 0.7;
+                                const r = (baseR * 2) * 0.7 * 1.5;
 
                                 const step = (s.stage8P100Step || 0) % 6;
                                 if (step === 0 || step === 1 || step === 3 || step === 4) {
-                                    this.invaderBullets.push(new Bullet(sx, sy, Math.abs(vyBase), cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', 'hane.png', r));
+                                    const b = new Bullet(sx, sy, Math.abs(vyBase), cfg.bulletColor || COLORS.CYAN, 0, true, cfg.bulletShape || 'circle', 'hane.png', r);
+                                    b.hitboxScaleX *= 1.5;
+                                    b.hitboxScaleY *= 1.5;
+                                    this.invaderBullets.push(b);
                                 } else if (step === 2) {
                                     const count = 3;
                                     const speed = 3;
@@ -2182,7 +2192,10 @@ Presented by
                                         const a = startAngle + stepA * i;
                                         const nvx = Math.cos(a) * speed;
                                         const nvy = Math.sin(a) * speed;
-                                        this.invaderBullets.push(new Bullet(sx, sy, nvy, cfg.bulletColor || COLORS.CYAN, nvx, true, cfg.bulletShape || 'circle', 'hane02.png', r));
+                                        const b = new Bullet(sx, sy, nvy, cfg.bulletColor || COLORS.CYAN, nvx, true, cfg.bulletShape || 'circle', 'hane02.png', r);
+                                        b.hitboxScaleX *= 1.5;
+                                        b.hitboxScaleY *= 1.5;
+                                        this.invaderBullets.push(b);
                                     }
                                 } else if (step === 5) {
                                     const playerCx = this.player.x + this.player.width / 2;
@@ -2193,7 +2206,10 @@ Presented by
                                     const spd = 3;
                                     const avx = (dx / dist) * spd;
                                     const avy = (dy / dist) * spd;
-                                    this.invaderBullets.push(new Bullet(sx, sy, avy, cfg.bulletColor || COLORS.CYAN, avx, true, cfg.bulletShape || 'circle', 'hane03.png', r));
+                                    const b = new Bullet(sx, sy, avy, cfg.bulletColor || COLORS.CYAN, avx, true, cfg.bulletShape || 'circle', 'hane03.png', r);
+                                    b.hitboxScaleX *= 1.5;
+                                    b.hitboxScaleY *= 1.5;
+                                    this.invaderBullets.push(b);
                                 }
 
                                 const intervals = [1000, 500, 1000, 1000, 500, 1000];
@@ -2282,32 +2298,50 @@ Presented by
 
                         // HP30%以下：inugami02_tamaを放射状に1回転発射→5秒待機→繰り返し
                         else if (phase === 3) {
+                            if (!s.stage8Phase3PowerUpDone) {
+                                s.stage8Phase3PowerUpDone = true;
+                                const fxMul = this.getFxMul();
+                                for (let i = 0; i < Math.max(1, Math.floor(70 * fxMul)); i++) this.particles.push(new Particle(sx, sy, COLORS.GOLD));
+                                for (let i = 0; i < Math.max(1, Math.floor(60 * fxMul)); i++) this.souls.push(new SoulParticle(sx, sy, 2));
+                                this.blasts.push(new BlastEffect(sx, sy, 90));
+                                s.hitFlash = Math.max(0, (s.hitFlash || 0)) + 6;
+                            }
+
                             if (!Number.isFinite(s.stage8SpinWaitMs)) s.stage8SpinWaitMs = 0;
-                            if (!Number.isFinite(s.stage8SpinTimerMs)) s.stage8SpinTimerMs = 0;
                             if (!Number.isFinite(s.stage8SpinStep)) s.stage8SpinStep = 0;
-                            if (!Number.isFinite(s.stage8SpinActive)) s.stage8SpinActive = false;
 
                             const baseR = ((cfg.bulletRadius || 8) * 1.5);
                             const r = (baseR * 2);
                             const img = 'syuriken.png';
 
-                            if (s.stage8SpinWaitMs > 0) {
-                                s.stage8SpinWaitMs -= dtMs;
-                            } else {
-                                const ringCount = 8;
-                                const speed = 3;
-                                const baseAngle = 0;
-                                for (let i = 0; i < ringCount; i++) {
-                                    const a = baseAngle + (i * (Math.PI * 2 / ringCount));
-                                    const vx = Math.cos(a) * speed;
-                                    const vy = Math.sin(a) * speed;
+                            s.stage8SpinWaitMs -= dtMs;
+                            if (s.stage8SpinWaitMs <= 0) {
+                                const step = (s.stage8SpinStep || 0) % 2;
+                                if (step === 0) {
+                                    const ringCount = 8;
+                                    const speed = 4;
+                                    const baseAngle = 0;
+                                    for (let i = 0; i < ringCount; i++) {
+                                        const a = baseAngle + (i * (Math.PI * 2 / ringCount));
+                                        const vx = Math.cos(a) * speed;
+                                        const vy = Math.sin(a) * speed;
+                                        this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', img, r));
+                                    }
+                                    s.stage8SpinStep = 1;
+                                    s.stage8SpinWaitMs = 2000;
+                                } else {
+                                    const playerCx = this.player.x + this.player.width / 2;
+                                    const playerCy = this.player.y + this.player.height / 2;
+                                    const dx = playerCx - sx;
+                                    const dy = playerCy - sy;
+                                    const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+                                    const spd = 5;
+                                    const vx = (dx / dist) * spd;
+                                    const vy = (dy / dist) * spd;
                                     this.invaderBullets.push(new Bullet(sx, sy, vy, cfg.bulletColor || COLORS.CYAN, vx, true, cfg.bulletShape || 'circle', img, r));
+                                    s.stage8SpinStep = 0;
+                                    s.stage8SpinWaitMs = 2000;
                                 }
-
-                                s.stage8SpinActive = false;
-                                s.stage8SpinStep = 0;
-                                s.stage8SpinTimerMs = 0;
-                                s.stage8SpinWaitMs = 3000;
                             }
                         }
                     }
@@ -2530,8 +2564,10 @@ Presented by
                 this.souls = this.souls.filter(s => !s.markedForDeletion);
                 this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => p.alpha > 0);
                 if (this.pendingInvaders.length > 0) { this.invaders.push(...this.pendingInvaders); this.pendingInvaders = []; }
-                if (this.invaders.length === 0 && !this.waveTransitioning) {
-                    const c = STAGE_CONFIG[this.currentStage];
+                const c = STAGE_CONFIG[this.currentStage];
+                const isStage8BossCleared = (c && c.waveLabel === '8' && !this.invaders.some(v => v && !v.markedForDeletion && v.isVisible && v.typeName === 'inugami02'));
+                const isWaveCleared = ((this.invaders.length === 0) || isStage8BossCleared);
+                if (isWaveCleared && !this.waveTransitioning) {
                     const isStage6SubWave = (c && (c.waveLabel === '6-1' || c.waveLabel === '6-2'));
                     const isMidBossClear = (!isStage6SubWave && c.isMidBoss) || (c.enemy.includes('inugami'));
 
@@ -2786,7 +2822,12 @@ Presented by
                         } else if (it.type === 'mbrem') {
                             this.player.isInvincible = true;
                             this.player.invincibleTimer = 5000;
-                            this.lives = this.maxVisibleHearts;
+                            const heal = (it && Number.isFinite(it.mbremHealAmount)) ? it.mbremHealAmount : null;
+                            if (heal != null) {
+                                this.lives = Math.min(this.maxVisibleHearts, this.lives + heal);
+                            } else {
+                                this.lives = this.maxVisibleHearts;
+                            }
                             this.updateLivesUI();
                             const fxMul = this.getFxMul();
                             for (let i = 0; i < Math.max(1, Math.floor(60 * fxMul)); i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
@@ -2912,7 +2953,9 @@ Presented by
                     this.killedCountInWave++;
 
                     if (stageCfg && stageCfg.waveLabel === '8' && inv.typeName === 'tinoishi') {
-                        this.items.push(new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, 'mbrem'));
+                        const it = new Item(inv.x + inv.width / 2, inv.y + inv.height / 2, 'mbrem');
+                        it.mbremHealAmount = 2;
+                        this.items.push(it);
                     }
                     if (inv.isMidBoss && stageCfg && (stageCfg.waveLabel === '6-1' || stageCfg.waveLabel === '6-2' || stageCfg.waveLabel === '6-3') && (inv.typeName === 'tengu' || inv.typeName === 'tengu02')) {
                         const dropType = pickPowerUpDropType();
@@ -2978,6 +3021,49 @@ Presented by
                 const ay = aIsCenter ? (a.y - aH / 2) : (a.y + (a.height - aH) / 2);
                 const bx = bIsCenter ? (b.x - bW / 2) : (b.x + (b.width - bW) / 2);
                 const by = bIsCenter ? (b.y - bH / 2) : (b.y + (b.height - bH) / 2);
+
+                const aIsWakasa = (a instanceof Item) && (a.type === 'wakasa');
+                const bIsWakasa = (b instanceof Item) && (b.type === 'wakasa');
+                if (aIsWakasa || bIsWakasa) {
+                    let ax2 = ax, ay2 = ay, aW2 = aW, aH2 = aH;
+                    let bx2 = bx, by2 = by, bW2 = bW, bH2 = bH;
+
+                    if (aIsWakasa) {
+                        const nw = (a.image && (a.image.naturalWidth || a.image.width)) || 0;
+                        const nh = (a.image && (a.image.naturalHeight || a.image.height)) || 0;
+                        let dw = 50, dh = 50;
+                        if (nw && nh) {
+                            const scale = 50 / Math.max(nw, nh);
+                            dw = nw * scale;
+                            dh = nh * scale;
+                        }
+                        const drawLeft = a.x - dw / 2;
+                        const drawTop = a.y - dh / 2;
+                        ax2 = drawLeft;
+                        ay2 = drawTop;
+                        aW2 = 50;
+                        aH2 = 50;
+                    }
+
+                    if (bIsWakasa) {
+                        const nw = (b.image && (b.image.naturalWidth || b.image.width)) || 0;
+                        const nh = (b.image && (b.image.naturalHeight || b.image.height)) || 0;
+                        let dw = 50, dh = 50;
+                        if (nw && nh) {
+                            const scale = 50 / Math.max(nw, nh);
+                            dw = nw * scale;
+                            dh = nh * scale;
+                        }
+                        const drawLeft = b.x - dw / 2;
+                        const drawTop = b.y - dh / 2;
+                        bx2 = drawLeft;
+                        by2 = drawTop;
+                        bW2 = 50;
+                        bH2 = 50;
+                    }
+
+                    return ax2 < bx2 + bW2 && ax2 + aW2 > bx2 && ay2 < by2 + bH2 && ay2 + aH2 > by2;
+                }
 
                 return ax < bx + bW && ax + aW > bx && ay < by + bH && ay + aH > by;
             }
