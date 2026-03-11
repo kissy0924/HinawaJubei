@@ -1369,6 +1369,8 @@ Presented by
                 this.lastFrameTs = null;
                 this.frameDeltaSec = 0;
                 this.audioInitialized = false;
+                this.bgmPlayPending = false;
+                this.bgmPlayPendingFile = null;
                 this.score = 0; this.init(); this.bindEvents();
                 requestAnimationFrame(this.loop.bind(this));
             }
@@ -1390,11 +1392,20 @@ Presented by
 
                 this.titleBgm = s('opning.mp3');
                 if (this.titleBgm) this.titleBgm.loop = true;
+
+                try {
+                    this.bgm = new Audio();
+                    this.bgm.loop = true;
+                    this.bgm.volume = 1.0;
+                } catch (e) {
+                    this.bgm = null;
+                }
             }
             ensureAudioInitialized() {
                 if (this.audioInitialized) return;
                 this.setupAudio();
                 this.audioInitialized = true;
+                this.tryUnlockBgm();
             }
             init() {
                 this.player = new Player(this); this.invaders = []; this.souls = []; this.blasts = []; this.particles = [];
@@ -1453,6 +1464,35 @@ Presented by
                 if (!this.titleBgm) return;
                 try { this.titleBgm.pause(); } catch (e) { }
             }
+            tryUnlockBgm() {
+                if (!this.bgm) return;
+                if (this.bgmUnlocked) return;
+                try {
+                    const prevVol = this.bgm.volume;
+                    this.bgm.volume = 0;
+                    this.bgm.src = 'opning.mp3';
+                    const p = this.bgm.play();
+                    if (p && p.then) {
+                        p.then(() => {
+                            try { this.bgm.pause(); } catch (e) { }
+                            try { this.bgm.currentTime = 0; } catch (e) { }
+                            this.bgm.volume = prevVol;
+                            this.bgmUnlocked = true;
+                        }).catch(() => {
+                            this.bgm.volume = prevVol;
+                        });
+                    } else {
+                        try { this.bgm.pause(); } catch (e) { }
+                        try { this.bgm.currentTime = 0; } catch (e) { }
+                        this.bgm.volume = prevVol;
+                        this.bgmUnlocked = true;
+                    }
+                } catch (e) { }
+            }
+            tryResumePendingBgm() {
+                if (!this.bgmPlayPending || !this.bgmPlayPendingFile) return;
+                this.playBGM(this.bgmPlayPendingFile);
+            }
             loadSecretUnlocks() {
                 const defaultUnlocks = new Array(8).fill(false);
                 try {
@@ -1492,6 +1532,8 @@ Presented by
                 });
             }
             bindEvents() {
+                document.addEventListener('touchstart', () => { this.tryUnlockBgm(); this.tryResumePendingBgm(); }, { passive: true });
+                document.addEventListener('pointerdown', () => { this.tryUnlockBgm(); this.tryResumePendingBgm(); }, { passive: true });
                 window.onkeydown = (e) => {
                     if ((e.key === 'z' || e.key === 'Z') && !e.repeat) { DEBUG_INVINCIBLE = !DEBUG_INVINCIBLE; return; }
                     if (!this.input.includes(e.key)) this.input.push(e.key);
@@ -1698,9 +1740,30 @@ Presented by
             }
             playBGM(file) {
                 if (this.currentBGMFile === file) return;
-                if (this.bgm) { try { this.bgm.pause(); } catch (e) { } this.bgm = null; }
-                this.bgm = new Audio(file); this.bgm.loop = true;
-                this.bgm.play().catch(() => { }); this.currentBGMFile = file;
+                if (!this.bgm) {
+                    try {
+                        this.bgm = new Audio();
+                        this.bgm.loop = true;
+                        this.bgm.volume = 1.0;
+                    } catch (e) {
+                        this.bgm = null;
+                    }
+                }
+                if (!this.bgm) return;
+                try { this.bgm.pause(); } catch (e) { }
+                try { this.bgm.currentTime = 0; } catch (e) { }
+                try { this.bgm.src = file; } catch (e) { }
+                const p = this.bgm.play();
+                if (p && p.then) {
+                    p.then(() => {
+                        this.bgmPlayPending = false;
+                        this.bgmPlayPendingFile = null;
+                    }).catch(() => {
+                        this.bgmPlayPending = true;
+                        this.bgmPlayPendingFile = file;
+                    });
+                }
+                this.currentBGMFile = file;
             }
             createInvaders(config) {
                 this.invaders = [];
