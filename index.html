@@ -43,10 +43,17 @@
             touch-action: none;
         }
 
+        @supports (height: 100svh) {
+            body {
+                min-height: 100svh;
+            }
+        }
+
         #game-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
+            transform-origin: top center;
         }
 
         #game-container {
@@ -566,7 +573,7 @@ Presented by
             tinoishi: { image: 'tinoishi.png', maxWidth: 80, health: 10, color: COLORS.RED },
             miniHyoutan: { image: 'hyoutan.png', maxWidth: 25, health: 1, color: COLORS.YELLOW, bulletShape: 'wave', bulletColor: COLORS.GREEN, bulletRadius: 10, bulletImage: 'hyoutan_tama.png' },
             hitotume: { image: 'hitotume.png', maxWidth: 50, health: 2, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
-            hitotume02: { image: 'hitotume02.png', maxWidth: 50, health: 3, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
+            hitotume02: { image: 'hitotume02.png', maxWidth: 50, health: 2, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
             hitotume03: { image: 'hitotume03.png', maxWidth: 50, health: 2, midBossHealth: 12, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
             nuriyome: { image: 'nuriyome.png', maxWidth: 50, health: 1, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama.png' },
             nuriyome02: { image: 'nuriyome02.png', maxWidth: 50, health: 1, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama.png' },
@@ -588,14 +595,14 @@ Presented by
             { enemy: 'hyoutan_nosplit', rows: 3, cols: 4, speed: 0.5, enemyBulletVy: 2, bg: 'st_02.png', bgm: 'STAGE-02.mp3', opening: 'OP02.png', waveLabel: '2-1' },
             { enemy: 'hyoutan02', rows: 3, cols: 4, speed: 0.75, enemyBulletVy: 2, bg: 'st_02.png', bgm: 'STAGE-02.mp3', waveLabel: '2-2' },
             { enemy: 'hyoutan03', isMidBoss: true, speed: 1.0, bg: 'st_02.png', bgm: 'STAGE-02.mp3', waveLabel: '2-3' },
-            { enemy: 'hitotume', rows: 4, cols: 4, speed: 0.75, bg: 'st_03.png', bgm: 'STAGE-03.mp3', opening: 'OP03.png', waveLabel: '3-1' },
+            { enemy: 'hitotume', rows: 3, cols: 4, speed: 0.75, bg: 'st_03.png', bgm: 'STAGE-03.mp3', opening: 'OP03.png', waveLabel: '3-1' },
             { enemy: 'hitotume02', rows: 4, cols: 5, speed: 1.0, bg: 'st_03.png', bgm: 'STAGE-03.mp3', waveLabel: '3-2' },
             { enemy: 'hitotume03', isMidBoss: true, speed: 1.5, bg: 'st_03.png', bgm: 'STAGE-03.mp3', waveLabel: '3-3' },
             { enemy: 'nuriyome', rows: 5, cols: 3, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', opening: 'OP04.png', waveLabel: '4-1' },
             { enemy: 'nuriyome02', rows: 5, cols: 3, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', waveLabel: '4-2' },
             { enemy: 'nuriyome03', isMidBoss: true, speed: 0.0, bg: 'st_04.png', bgm: 'STAGE-04.mp3', waveLabel: '4-3' },
-            { enemy: 'oni', rows: 3, cols: 4, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', opening: 'OP05.png', waveLabel: '5-1' },
-            { enemy: 'oni02', rows: 3, cols: 5, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-2' },
+            { enemy: 'oni', rows: 4, cols: 2, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', opening: 'OP05.png', waveLabel: '5-1' },
+            { enemy: 'oni02', rows: 3, cols: 3, speed: 1.2, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-2' },
             { enemy: 'oni03', isMidBoss: true, speed: 1.8, bg: 'st_05.png', bgm: 'STAGE-05.mp3', waveLabel: '5-3' },
             { enemy: 'tengu', rows: 1, cols: 1, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', opening: 'OP06.png', waveLabel: '6-1', isMidBoss: true },
             { enemy: 'tengu', rows: 1, cols: 2, speed: 1.8, bg: 'st_06.png', bgm: 'STAGE-06.mp3', waveLabel: '6-2', isMidBoss: true },
@@ -1812,10 +1819,12 @@ Presented by
                             }
                         }
                     } else {
-                        const spacing = (config.waveLabel === '5-1') ? 78 : 60, startX = (CANVAS_LOGICAL_WIDTH - (cols * spacing)) / 2 + spacing / 2 - 25;
+                        const ySpacing = 60;
+                        const xSpacing = (config.waveLabel === '5-1') ? 78 : ((config.waveLabel === '5-2') ? 78 : 60);
+                        const startX = (CANVAS_LOGICAL_WIDTH - (cols * xSpacing)) / 2 + xSpacing / 2 - 25;
                         for (let r = 0; r < rows; r++) {
                             for (let c = 0; c < cols; c++) {
-                                const inv = new Invader(startX + c * spacing, 80 + r * spacing, enemy, this);
+                                const inv = new Invader(startX + c * xSpacing, 80 + r * ySpacing, enemy, this);
                                 if (config.waveLabel === '5-1' && enemy === 'oni') {
                                     inv.health = 2;
                                     inv.maxHealth = 2;
@@ -2939,10 +2948,6 @@ Presented by
                 });
 
                 this.invaderBullets.forEach(b => {
-                    if (!b.markedForDeletion && optHit && this.rectHit(b, optHit)) {
-                        b.markedForDeletion = true;
-                        return;
-                    }
                     if (!b.markedForDeletion && !this.player.isInvincible && this.rectHit(b, pHit)) {
                         b.markedForDeletion = true;
                         if (!DEBUG_INVINCIBLE) {
@@ -2951,7 +2956,7 @@ Presented by
                             this.safePlay(this.playerDamageSound);
                             if (!this.player.wakasaOptionActive) this.player.setWeaponByIndex(0);
                             if (this.lives <= 0) this.setGameOver();
-                            else { this.player.isInvincible = true; this.player.invincibleTimer = 1000; }
+                            else { this.player.isInvincible = true; this.player.invincibleTimer = 2000; }
                         }
                     }
                 });
@@ -3223,7 +3228,30 @@ Presented by
                 requestAnimationFrame(this.loop.bind(this));
             }
         }
-        window.onload = () => { window.game = new Game(); };
+
+        const applyViewportScale = () => {
+            const wrapper = document.getElementById('game-wrapper');
+            if (!wrapper) return;
+
+            const vw = (window.visualViewport && window.visualViewport.width) ? window.visualViewport.width : window.innerWidth;
+            const vh = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+            if (!vw || !vh) return;
+
+            const scale = Math.min(1, (vw / CANVAS_LOGICAL_WIDTH), (vh / CANVAS_LOGICAL_HEIGHT));
+            wrapper.style.transform = `scale(${scale})`;
+        };
+
+        window.onload = () => {
+            applyViewportScale();
+            window.game = new Game();
+
+            window.addEventListener('resize', applyViewportScale);
+            window.addEventListener('orientationchange', applyViewportScale);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', applyViewportScale);
+                window.visualViewport.addEventListener('scroll', applyViewportScale);
+            }
+        };
     </script>
 </body>
 
