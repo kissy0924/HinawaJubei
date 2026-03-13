@@ -199,6 +199,20 @@
             cursor: pointer;
         }
 
+        #bonus-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            font-size: 46px;
+            font-weight: 700;
+            text-shadow: 3px 3px 6px #000, 0 0 10px rgba(255, 255, 255, 0.35);
+            white-space: pre-line;
+            z-index: 25;
+        }
+
         #stage-clear img {
             display: block;
             max-width: 320px;
@@ -458,6 +472,8 @@
             <canvas id="gameCanvas"></canvas>
             <div id="ui-layer" class="hidden">
                 <div id="score-board"><span id="score">0</span></div>
+                <div id="bonus-popup" class="hidden">BONUS
+0</div>
                 <div id="lives-display">
                     <img id="heart-0" class="heart-icon" src="herat_01.png">
                     <img id="heart-1" class="heart-icon" src="herat_01.png">
@@ -494,7 +510,7 @@
             </div>
             <div id="ending-screen" class="overlay hidden">
                 <img id="ending-image" src="ending.png" alt="エンディング">
-                <p style="color:var(--neon-yellow);font-size:28px;margin-bottom:10px;">祝！種子島は平和になった</p>
+                <p style="color:var(--neon-yellow);font-size:28px;margin-bottom:10px;">黄金のたねPayをとりもどした</p>
                 <p style="color:var(--text-color);font-size:24px;">最終スコア: <span id="end-final-score">0</span></p>
                 <div id="ending-credits-wrap">
                     <div id="ending-credits"><span class="credit-heading">Game Design</span>
@@ -524,7 +540,7 @@ TAC（種子島アクションクラブ）
 ※火縄銃兵衛・わかさ姫は西之表市のマスコットキャラクターです
 
 Presented by
-種子島ゲーム</div>
+種子島ゲームス</div>
                 </div>
                 <p id="ending-tap-hint" class="blink hidden" style="color:var(--neon-cyan);font-size:32px;margin-top:30px;">タップでタイトルへ</p>
             </div>
@@ -1370,7 +1386,8 @@ Presented by
                     stageClear: document.getElementById('stage-clear'), weaponDisplay: document.getElementById('weapon-display'),
                     endingScreen: document.getElementById('ending-screen'), endFinalScore: document.getElementById('end-final-score'),
                     endingTapHint: document.getElementById('ending-tap-hint'),
-                    finalScore: document.getElementById('final-score')
+                    finalScore: document.getElementById('final-score'),
+                    bonusPopup: document.getElementById('bonus-popup')
                 };
                 this.secretUnlocks = null;
                 this.lastFrameTs = null;
@@ -1380,6 +1397,17 @@ Presented by
                 this.bgmPlayPendingFile = null;
                 this.score = 0; this.init(); this.bindEvents();
                 requestAnimationFrame(this.loop.bind(this));
+            }
+            showBonus(points) {
+                if (!this.ui || !this.ui.bonusPopup) return;
+                try {
+                    this.ui.bonusPopup.innerText = `BONUS\n${points}`;
+                    this.ui.bonusPopup.classList.remove('hidden');
+                    if (this.bonusPopupTimer) clearTimeout(this.bonusPopupTimer);
+                    this.bonusPopupTimer = setTimeout(() => {
+                        if (this.ui && this.ui.bonusPopup) this.ui.bonusPopup.classList.add('hidden');
+                    }, 3000);
+                } catch (e) { }
             }
             setupAudio() {
                 const s = (f) => { try { let a = new Audio(f); a.volume = 1.0; return a; } catch (e) { return null; } };
@@ -2671,12 +2699,12 @@ Presented by
 
                             setTimeout(() => {
                                 let bonusImg = null;
-                                if (!this.bonusLife2Granted && this.score >= 60000) {
+                                if (!this.bonusLife2Granted && this.score >= 100000) {
                                     bonusImg = 'bonus02.png';
                                     this.maxVisibleHearts = 5;
                                     this.bonusLife2Granted = true;
                                     this.bonusLife1Granted = true;
-                                } else if (!this.bonusLife1Granted && this.score >= 30000) {
+                                } else if (!this.bonusLife1Granted && this.score >= 50000) {
                                     bonusImg = 'bonus01.png';
                                     this.maxVisibleHearts = 4;
                                     this.bonusLife1Granted = true;
@@ -2810,8 +2838,9 @@ Presented by
                         this.chyoka.markedForDeletion = true;
                         b.markedForDeletion = true;
                         this.safePlay(this.chokamenSound);
-                        this.score += 5000;
+                        this.score += 8000;
                         this.ui.score.innerText = this.score;
+                        this.showBonus(8000);
                         for (let i = 0; i < 60; i++) this.souls.push(new SoulParticle(this.chyoka.x + this.chyoka.width / 2, this.chyoka.y + this.chyoka.height / 2, 2));
                         return;
                     }
@@ -2829,6 +2858,7 @@ Presented by
                                 this.unlockSecret(this.currentMajorStage);
                                 this.score += 10000;
                                 this.ui.score.innerText = this.score;
+                                this.showBonus(10000);
                                 this.safePlay(this.successSound);
                                 for (let i = 0; i < 50; i++) this.souls.push(new SoulParticle(this.hiddenItemPos.x, this.hiddenItemPos.y, 2));
                                 this.blasts.push(new BlastEffect(this.hiddenItemPos.x, this.hiddenItemPos.y, 80));
@@ -2889,6 +2919,8 @@ Presented by
 
                         if (it.type === 'wakasa') {
                             this.player.wakasaOptionActive = true;
+                            this.score += 5000;
+                            this.ui.score.innerText = this.score;
                             const fxMul = this.getFxMul();
                             for (let i = 0; i < Math.max(1, Math.floor(40 * fxMul)); i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
                         } else if (it.type === 'mbrem') {
@@ -2901,20 +2933,22 @@ Presented by
                                 this.lives = this.maxVisibleHearts;
                             }
                             this.updateLivesUI();
+                            this.score += 5000;
+                            this.ui.score.innerText = this.score;
                             const fxMul = this.getFxMul();
                             for (let i = 0; i < Math.max(1, Math.floor(60 * fxMul)); i++) this.particles.push(new Particle(it.x, it.y, COLORS.CYAN));
                         } else if (it.type === 'koban') {
                             // 小判専用SE再生
                             this.safePlay(this.kobanSound);
-                            // 小判効果: 500点加算
-                            this.score += 500;
+                            // 小判効果
+                            this.score += 1000;
                             this.ui.score.innerText = this.score;
                             const fxMul = this.getFxMul();
                             for (let i = 0; i < Math.max(1, Math.floor(30 * fxMul)); i++) this.souls.push(new SoulParticle(it.x, it.y, 1));
                         } else if (it.type === 'imo') {
                             // 回復アイテム
                             this.safePlay(this.imoSound);
-                            if (this.lives < 3) {
+                            if (this.lives < this.maxVisibleHearts) {
                                 this.lives++;
                                 this.updateLivesUI();
                             }
@@ -2943,6 +2977,8 @@ Presented by
                                 case 'ren': this.player.setWeaponByIndex(1); break;
                                 case 'san': this.player.setWeaponByIndex(2); break;
                             }
+                            this.score += 500;
+                            this.ui.score.innerText = this.score;
                         }
                     }
                 });
@@ -3002,19 +3038,30 @@ Presented by
                 if (inv.health <= 0) {
                     inv.markedForDeletion = true;
                     // --- 敵に応じたスコア加算 ---
-                    let addedScore = 10;
-                    if (inv.type.isBoss) {
-                        if (inv.typeName === 'inugami01') addedScore = 10000;
-                        else if (inv.typeName === 'inugami02') addedScore = 20000;
-                    } else if (inv.isMidBoss) {
-                        if (inv.typeName === 'tengu') addedScore = 3000;
-                        else addedScore = 1000;
-                    } else {
-                        if (inv.typeName.includes('hitotume')) addedScore = 100;
-                        else if (inv.typeName.includes('oni')) addedScore = 80;
-                        else if (inv.typeName.includes('hyoutan')) addedScore = 50;
-                        else if (inv.typeName.includes('nuriyome')) addedScore = 30;
-                    }
+                    let addedScore = 0;
+                    if (inv.typeName === 'kapa') addedScore = 100;
+                    else if (inv.typeName === 'kapa02') addedScore = 200;
+                    else if (inv.typeName === 'kapa03') addedScore = 5000;
+                    else if (inv.typeName === 'hyoutan') addedScore = 100;
+                    else if (inv.typeName === 'hyoutan_nosplit') addedScore = 200;
+                    else if (inv.typeName === 'miniHyoutan') addedScore = 200;
+                    else if (inv.typeName === 'hyoutan02') addedScore = 100;
+                    else if (inv.typeName === 'hyoutan03') addedScore = 5000;
+                    else if (inv.typeName === 'hitotume') addedScore = 300;
+                    else if (inv.typeName === 'hitotume02') addedScore = 400;
+                    else if (inv.typeName === 'hitotume03') addedScore = 6000;
+                    else if (inv.typeName === 'nuriyome') addedScore = 200;
+                    else if (inv.typeName === 'nuriyome02') addedScore = 300;
+                    else if (inv.typeName === 'nuriyome03') addedScore = 6000;
+                    else if (inv.typeName === 'oni') addedScore = 300;
+                    else if (inv.typeName === 'oni02') addedScore = 300;
+                    else if (inv.typeName === 'oni03') addedScore = 6000;
+                    else if (inv.typeName === 'tengu') addedScore = 2000;
+                    else if (inv.typeName === 'tengu02') addedScore = 3000;
+                    else if (inv.typeName === 'tengu03') addedScore = 4000;
+                    else if (inv.typeName === 'inugami01') addedScore = 20000;
+                    else if (inv.typeName === 'inugami02') addedScore = 50000;
+                    else if (inv.typeName === 'tinoishi') addedScore = 1000;
                     this.score += addedScore;
                     this.ui.score.innerText = this.score;
 
@@ -3237,7 +3284,9 @@ Presented by
             const vh = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
             if (!vw || !vh) return;
 
-            const scale = Math.min(1, (vw / CANVAS_LOGICAL_WIDTH), (vh / CANVAS_LOGICAL_HEIGHT));
+            const baseW = CANVAS_LOGICAL_WIDTH;
+            const baseH = CANVAS_LOGICAL_HEIGHT + 100;
+            const scale = Math.min(1, (vw / baseW), (vh / baseH));
             wrapper.style.transform = `scale(${scale})`;
         };
 
