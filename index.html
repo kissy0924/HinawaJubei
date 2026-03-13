@@ -571,6 +571,7 @@ Presented by
         const CANVAS_LOGICAL_WIDTH = 400;
         const CANVAS_LOGICAL_HEIGHT = 600;
         let DEBUG_INVINCIBLE = false; // 無敵モードを解除
+        let DEBUG_PERF = false;
 
         const COLORS = {
             CYAN: '#0ff', MAGENTA: '#f0f', YELLOW: '#ff0', WHITE: '#fff', RED: '#f00', GREEN: '#0f0', GOLD: '#ffd700'
@@ -3192,16 +3193,18 @@ Presented by
                 this.ctx.clearRect(0, 0, 400, 600);
                 if (this.bgImage.complete) this.ctx.drawImage(this.bgImage, 0, 0, 400, 600);
 
-                this.ctx.save();
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                this.ctx.fillRect(6, 6, 190, 56);
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = '12px monospace';
-                const dtMs = (Number.isFinite(this.lastDtMs) ? this.lastDtMs : 0).toFixed(1);
-                const avgMs = (Number.isFinite(this.perfAvgDtMs) ? this.perfAvgDtMs : 0).toFixed(1);
-                this.ctx.fillText(`dt:${dtMs} avg:${avgMs} lite:${this.liteMode ? 1 : 0}`, 10, 24);
-                this.ctx.fillText(`particles:${this.particles.length} souls:${this.souls.length}`, 10, 42);
-                this.ctx.restore();
+                if (DEBUG_PERF) {
+                    this.ctx.save();
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                    this.ctx.fillRect(6, 6, 190, 56);
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '12px monospace';
+                    const dtMs = (Number.isFinite(this.lastDtMs) ? this.lastDtMs : 0).toFixed(1);
+                    const avgMs = (Number.isFinite(this.perfAvgDtMs) ? this.perfAvgDtMs : 0).toFixed(1);
+                    this.ctx.fillText(`dt:${dtMs} avg:${avgMs} lite:${this.liteMode ? 1 : 0}`, 10, 24);
+                    this.ctx.fillText(`particles:${this.particles.length} souls:${this.souls.length}`, 10, 42);
+                    this.ctx.restore();
+                }
 
                 // 隠しアイテムの描画
                 if (this.hiddenItemFound) {
