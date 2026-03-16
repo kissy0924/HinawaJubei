@@ -216,8 +216,8 @@
         #combo-display {
             position: absolute;
             top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            left: 0;
+            transform: translate(0, -50%);
             margin-top: 70px;
             text-align: center;
             color: var(--neon-yellow);
@@ -225,7 +225,25 @@
             text-shadow: 2px 2px 4px #000, 0 0 10px var(--gold-glow);
             z-index: 25;
             pointer-events: none;
-            white-space: nowrap;
+            white-space: pre-line;
+        }
+
+        #combo-display .combo-mul {
+            font-size: 32px;
+        }
+
+        #pause-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--neon-yellow);
+            font-size: 56px;
+            font-weight: 700;
+            text-shadow: 3px 3px 6px #000, 0 0 12px var(--gold-glow);
+            z-index: 30;
+            pointer-events: none;
         }
 
         #stage-clear img {
@@ -490,6 +508,7 @@
                 <div id="bonus-popup" class="hidden">BONUS
 0</div>
                 <div id="combo-display" class="hidden">COMBO 0</div>
+                <div id="pause-overlay" class="hidden">PAUSE</div>
                 <div id="lives-display">
                     <img id="heart-0" class="heart-icon" src="herat_01.png">
                     <img id="heart-1" class="heart-icon" src="herat_01.png">
@@ -612,10 +631,10 @@ Presented by
             hitotume03: { image: 'hitotume03.png', maxWidth: 50, health: 2, midBossHealth: 12, color: COLORS.CYAN, bulletShape: 'star', bulletColor: COLORS.YELLOW, bulletImage: 'hitotume_tama.png' },
             nuriyome: { image: 'nuriyome.png', maxWidth: 50, health: 1, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama.png' },
             nuriyome02: { image: 'nuriyome02.png', maxWidth: 50, health: 1, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama.png' },
-            nuriyome03: { image: 'nuriyome03.png', maxWidth: 50, health: 1, midBossHealth: 8, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama02.png' },
+            nuriyome03: { image: 'nuriyome03.png', maxWidth: 50, health: 1, midBossHealth: 5, color: COLORS.WHITE, canHide: true, bulletShape: 'magatama', bulletColor: COLORS.CYAN, bulletImage: 'nuriyome_tama02.png' },
             oni: { image: 'oni.png', maxWidth: 80, health: 3, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
             oni02: { image: 'oni02.png', maxWidth: 80, health: 3, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
-            oni03: { image: 'oni03.png', maxWidth: 80, health: 3, midBossHealth: 20, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
+            oni03: { image: 'oni03.png', maxWidth: 80, health: 3, midBossHealth: 15, color: COLORS.RED, verticalMove: true, bulletShape: 'diamond', bulletColor: COLORS.RED, bulletImage: 'oni_tama.png' },
             tengu: { image: 'tengu.png', maxWidth: 62, health: 4, midBossHealth: 4, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane.png' },
             tengu02: { image: 'tengu02.png', maxWidth: 62, health: 5, midBossHealth: 5, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane02.png' },
             tengu03: { image: 'tengu03.png', maxWidth: 62, health: 6, midBossHealth: 6, color: COLORS.YELLOW, randomMove: true, bulletImage: 'hane03.png' },
@@ -1407,7 +1426,8 @@ Presented by
                     endingTapHint: document.getElementById('ending-tap-hint'),
                     finalScore: document.getElementById('final-score'),
                     bonusPopup: document.getElementById('bonus-popup'),
-                    comboDisplay: document.getElementById('combo-display')
+                    comboDisplay: document.getElementById('combo-display'),
+                    pauseOverlay: document.getElementById('pause-overlay')
                 };
                 this.secretUnlocks = null;
                 this.lastFrameTs = null;
@@ -1432,12 +1452,28 @@ Presented by
             updateComboUI() {
                 if (!this.ui || !this.ui.comboDisplay) return;
                 const cRaw = (this.comboCount || 0);
-                const c = Math.min(cRaw, 10);
+                const c = Math.min(cRaw, 15);
                 if (c >= 3) {
-                    this.ui.comboDisplay.innerText = `COMBO ${c}`;
+                    this.ui.comboDisplay.innerHTML = `${c} COMBO<br><span class="combo-mul">（×${c}）</span>`;
                     this.ui.comboDisplay.classList.remove('hidden');
                 } else {
                     this.ui.comboDisplay.classList.add('hidden');
+                }
+            }
+            setPaused(p) {
+                const next = !!p;
+                if (this.paused === next) return;
+                this.paused = next;
+                if (this.ui && this.ui.pauseOverlay) {
+                    if (this.paused) this.ui.pauseOverlay.classList.remove('hidden');
+                    else this.ui.pauseOverlay.classList.add('hidden');
+                }
+                if (this.paused) {
+                    if (this.bgm) { try { this.bgm.pause(); } catch (e) { } }
+                } else {
+                    this.tryUnlockBgm();
+                    this.tryResumePendingBgm();
+                    if (this.currentBGMFile) this.playBGM(this.currentBGMFile);
                 }
             }
             setupAudio() {
@@ -1481,6 +1517,9 @@ Presented by
                 this.comboCount = 0;
                 this.comboLastKillMs = 0;
                 this.updateComboUI();
+                this.paused = false;
+                this.lastPauseToggleMs = 0;
+                if (this.ui && this.ui.pauseOverlay) this.ui.pauseOverlay.classList.add('hidden');
                 this.mbremDropped = false;
                 this.waveTransitioning = false; this.invaderDirection = 1; this.bgImage = new Image(); this.gameStartedInitiated = false;
                 this.endingTapEnabled = false;
@@ -1603,6 +1642,21 @@ Presented by
             bindEvents() {
                 document.addEventListener('touchstart', () => { this.tryUnlockBgm(); this.tryResumePendingBgm(); }, { passive: true });
                 document.addEventListener('pointerdown', () => { this.tryUnlockBgm(); this.tryResumePendingBgm(); }, { passive: true });
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) return;
+                    this.tryUnlockBgm();
+                    this.tryResumePendingBgm();
+                    if (!this.bgmPlayPending && this.bgm && this.currentBGMFile && this.bgm.paused) {
+                        this.playBGM(this.currentBGMFile);
+                    }
+                });
+                window.addEventListener('pageshow', () => {
+                    this.tryUnlockBgm();
+                    this.tryResumePendingBgm();
+                    if (!this.bgmPlayPending && this.bgm && this.currentBGMFile && this.bgm.paused) {
+                        this.playBGM(this.currentBGMFile);
+                    }
+                });
                 window.onkeydown = (e) => {
                     if ((e.key === 'z' || e.key === 'Z') && !e.repeat) { DEBUG_INVINCIBLE = !DEBUG_INVINCIBLE; return; }
                     if (!this.input.includes(e.key)) this.input.push(e.key);
@@ -1617,6 +1671,25 @@ Presented by
                 const titleBtns = document.querySelector('#start-screen .title-btns');
                 const btnLeft = document.getElementById('btn-left');
                 const btnRight = document.getElementById('btn-right');
+
+                const togglePauseByTap = (e) => {
+                    if (!e) return;
+                    if (this.gameOver || this.showingOpening) return;
+                    const sc = (this.ui && this.ui.stageClear) ? this.ui.stageClear : null;
+                    if (sc && !sc.classList.contains('hidden')) return;
+                    const t = e.target;
+                    if (t && (t === btnLeft || t === btnRight)) return;
+                    const mc = document.getElementById('mobile-controls');
+                    if (mc && t && mc.contains(t)) return;
+
+                    const nowMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                    if (this.lastPauseToggleMs && (nowMs - this.lastPauseToggleMs) < 250) return;
+                    this.lastPauseToggleMs = nowMs;
+                    this.setPaused(!this.paused);
+                };
+
+                document.addEventListener('touchstart', togglePauseByTap, { passive: true });
+                document.addEventListener('pointerdown', togglePauseByTap, { passive: true });
 
                 const fitOneLine = (el, maxPx = 32, minPx = 18) => {
                     if (!el) return;
@@ -1813,7 +1886,7 @@ Presented by
                 setTimeout(() => { if (this.showingOpening) proceed(); }, 4000);
             }
             playBGM(file) {
-                if (this.currentBGMFile === file) return;
+                if (this.currentBGMFile === file && this.bgm && !this.bgm.paused && !this.bgmPlayPending) return;
                 if (!this.bgm) {
                     try {
                         this.bgm = new Audio();
@@ -1911,6 +1984,7 @@ Presented by
                         this.updateComboUI();
                     }
                 }
+                if (this.paused) return;
                 if (this.gameOver || this.showingOpening) return;
                 if (this.stageTime > 0) { this.stageTime -= (this.frameDeltaSec || 0); this.ui.time.innerText = Math.ceil(this.stageTime); }
 
@@ -3119,7 +3193,7 @@ Presented by
                     }
                     this.comboLastKillMs = nowMs;
 
-                    const comboForMul = Math.min(Math.max(0, this.comboCount || 0), 10);
+                    const comboForMul = Math.min(Math.max(0, this.comboCount || 0), 15);
                     const comboMul = (comboForMul >= 3) ? comboForMul : 1;
                     this.score += (addedScore * comboMul);
                     this.ui.score.innerText = this.score;
@@ -3335,8 +3409,13 @@ Presented by
                     }
                 }
                 this.frameDeltaSec = Math.max(0, Math.min(0.2, dt / 1000));
-                this.update();
-                this.draw();
+                if (this.paused) {
+                    this.frameDeltaSec = 0;
+                    this.draw();
+                } else {
+                    this.update();
+                    this.draw();
+                }
                 requestAnimationFrame(this.loop.bind(this));
             }
         }
