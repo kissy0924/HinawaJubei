@@ -228,6 +228,20 @@
             white-space: pre-line;
         }
 
+        #combo-display.combo-white {
+            color: #fff;
+            text-shadow: 2px 2px 4px #000, 0 0 10px rgba(255, 255, 255, 0.35);
+        }
+
+        #combo-display.combo-yellow {
+            color: var(--neon-yellow);
+        }
+
+        #combo-display.combo-red {
+            color: #ff4040;
+            text-shadow: 2px 2px 4px #000, 0 0 10px rgba(255, 64, 64, 0.5);
+        }
+
         #combo-display .combo-mul {
             font-size: 32px;
         }
@@ -1455,8 +1469,13 @@ Presented by
                 const c = Math.min(cRaw, 15);
                 if (c >= 3) {
                     this.ui.comboDisplay.innerHTML = `${c} COMBO<br><span class="combo-mul">（×${c}）</span>`;
+                    this.ui.comboDisplay.classList.remove('combo-white', 'combo-yellow', 'combo-red');
+                    if (c >= 14) this.ui.comboDisplay.classList.add('combo-red');
+                    else if (c >= 11) this.ui.comboDisplay.classList.add('combo-yellow');
+                    else this.ui.comboDisplay.classList.add('combo-white');
                     this.ui.comboDisplay.classList.remove('hidden');
                 } else {
+                    this.ui.comboDisplay.classList.remove('combo-white', 'combo-yellow', 'combo-red');
                     this.ui.comboDisplay.classList.add('hidden');
                 }
             }
